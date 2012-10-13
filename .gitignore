@@ -1,0 +1,19 @@
+# Compiled sources
+#####################
+*.o
+*.swp
+
+# Directories
+####################
+bin/
+build/
+tmp/
+javadoc/
+.settings/
+
+# OS generated files
+#####################
+.DS_Store?
+ehthumbs.db
+Icon?
+Thumbs.db
