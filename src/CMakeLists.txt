@@ -1,0 +1,12 @@
+add_subdirectory(commands)
+
+set(SRCS
+safeword.c
+)
+
+# put the executable in the root directory
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
+add_executable(safeword ${SRCS})
+target_link_libraries(safeword
+commands
+)
