@@ -5,7 +5,17 @@
 
 void print_usage()
 {
-	printf("safeword command [OPTIONS] args\n");
+	printf("safeword COMMAND [OPTIONS] [ARGS]\n");
+}
+
+void print_supported_commands()
+{
+	int i;
+
+	printf("supported commands:\n");
+	for (i = 0; i < command_table_size; i++) {
+		printf("\t%s\n", command_table[i].name);
+	}
 }
 
 void print_possible_commands(const char* command_str)
@@ -28,6 +38,7 @@ int main(int argc, char** argv)
 	// minimum of 2 parameters (safeword command itself and a subcommand)
 	if (argc < 2) {
 		print_usage();
+		print_supported_commands();
 		return 0;
 	}
 
