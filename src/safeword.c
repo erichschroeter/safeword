@@ -44,7 +44,7 @@ int main(int argc, char** argv)
 		}
 
 		if (command_index >= 0 && matches == 1) {
-			res = command_table[command_index].parse(argc, argv);
+			res = command_table[command_index].parse(--argc, ++argv);
 			if (!res)
 				command_table[command_index].execute();
 		} else if (matches) {
