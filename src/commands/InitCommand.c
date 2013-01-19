@@ -3,6 +3,7 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#include <getopt.h>
 #include <sqlite3.h>
 
 #include "InitCommand.h"
@@ -17,12 +18,27 @@ char* initCmd_help(void)
 int initCmd_parse(int argc, char** argv)
 {
 	int ret = 0;
+	int force = 0;
+	int c;
+	struct option long_options[] = {
+		{"force",	no_argument,	NULL,	'f'},
+	};
+
+	while ((c = getopt_long(argc, argv, "f", long_options, 0)) != -1) {
+		switch (c) {
+		case 'f':
+			force++;
+			break;
+		}
+	}
 
 	if (argc < 2)
 		return ret;
 
-	if (!access(argv[1], F_OK)) {
-		fprintf(stderr, "'%s' already exists\n", argv[1]);
+	if (!access(argv[1], F_OK) && !force) {
+		fprintf(stderr,
+			"'%s' already exists. Use --force to overwrite.\n",
+			argv[1]);
 		ret = -EEXIST;
 		goto fail;
 	}
