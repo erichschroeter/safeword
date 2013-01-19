@@ -38,23 +38,24 @@ int initCmd_parse(int argc, char** argv)
 		}
 	}
 
-	if (argc < 2)
+	/*  must have at least one remaining argument after parsing options */
+	if ((argc - optind) < 1)
 		return ret;
 
-	if (!access(argv[1], F_OK) && !force) {
+	if (!access(argv[optind], F_OK) && !force) {
 		fprintf(stderr,
 			"'%s' already exists. Use --force to overwrite.\n",
-			argv[1]);
+			argv[optind]);
 		ret = -EEXIST;
 		goto fail;
 	}
 
-	file = calloc(strlen(argv[1]), sizeof(char));
+	file = calloc(strlen(argv[optind]), sizeof(char));
 	if (!file) {
 		ret = -ENOMEM;
 		goto fail;
 	}
-	file = strcpy(file, argv[1]);
+	file = strcpy(file, argv[optind]);
 
 fail:
 	return ret;
