@@ -58,6 +58,7 @@ int initCmd_execute(void)
 {
 	int ret;
 	sqlite3* handle;
+	char* query;
 
 	if (!file)
 		return 0;
@@ -68,6 +69,36 @@ int initCmd_execute(void)
 		return -ret;
 	}
 	free(file);
+
+	query = "CREATE TABLE IF NOT EXISTS tags "
+		"(id INTEGER PRIMARY KEY, tag TEXT)";
+	ret = sqlite3_exec(handle, query, 0, 0, 0);
+
+	query = "CREATE TABLE IF NOT EXISTS usernames "
+		"(id INTEGER PRIMARY KEY, username TEXT)";
+	ret = sqlite3_exec(handle, query, 0, 0, 0);
+
+	query = "CREATE TABLE IF NOT EXISTS passwords "
+		"(id INTEGER PRIMARY KEY, password TEXT)";
+	ret = sqlite3_exec(handle, query, 0, 0, 0);
+
+	query = "CREATE TABLE IF NOT EXISTS credentials ("
+		"id INTEGER PRIMARY KEY,"
+		"usernameid INTEGER,"
+		"passwordid INTEGER,"
+		"description TEXT,"
+		"FOREIGN KEY(usernameid) REFERENCES usernames(id)"
+		"FOREIGN KEY(passwordid) REFERENCES passwords(id)"
+		")";
+	ret = sqlite3_exec(handle, query, 0, 0, 0);
+
+	query = "CREATE TABLE IF NOT EXISTS tagged_credentials ("
+		"credentialid INTEGER,"
+		"tagid INTEGER,"
+		"FOREIGN KEY(credentialid) REFERENCES credentials(id)"
+		"FOREIGN KEY(tagid) REFERENCES tags(id)"
+		")";
+	ret = sqlite3_exec(handle, query, 0, 0, 0);
 
 	sqlite3_close(handle);
 
