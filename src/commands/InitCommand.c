@@ -12,7 +12,13 @@ static char* file = NULL;
 
 char* initCmd_help(void)
 {
-	return NULL;
+	return "SYNOPSIS\n"
+"	init [-f | --force] FILE\n"
+"OPTIONS\n"
+"	-f, --force\n"
+"	    Force the database file initialization. This will overwrite the\n"
+"	    existing file.\n"
+"\n";
 }
 
 int initCmd_parse(int argc, char** argv)
