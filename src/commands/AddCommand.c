@@ -12,6 +12,7 @@ static char* password = NULL;
 static char* description = NULL;
 
 static int username_id;
+static int password_id;
 
 char* addCmd_help(void)
 {
@@ -118,6 +119,58 @@ fail:
 	return ret;
 }
 
+static int password_callback(void* not_used, int argc, char** argv, char** col_name)
+{
+	password_id = atoi(argv[0]);
+
+	return 0;
+}
+
+int map_password(sqlite3* handle, const char* password, sqlite3_int64 credential_rowid)
+{
+	int ret;
+	char* sql;
+
+	password_id = -1; // set to invalid value
+
+	sql = calloc(strlen(password) + 100, sizeof(char));
+	if (!sql) {
+		ret = -ENOMEM;
+		goto fail;
+	}
+	sprintf(sql, "SELECT id FROM passwords WHERE password='%s'", password);;
+	ret = sqlite3_exec(handle, sql, password_callback, &credential_rowid, 0);
+	free(sql);
+
+	if (password_id == -1) {
+		sql = calloc(strlen(password) + 100, sizeof(char));
+		if (!sql) {
+			ret = -ENOMEM;
+			goto fail;
+		}
+
+		sprintf(sql, "INSERT INTO passwords (password) VALUES ('%s')", password);
+		ret = sqlite3_exec(handle, sql, 0, 0, 0);
+		free(sql);
+		password_id = sqlite3_last_insert_rowid(handle);
+	}
+
+	sql = calloc(strlen(password) + 100, sizeof(char));
+	if (!sql) {
+		ret = -ENOMEM;
+		goto fail;
+	}
+
+	sprintf(sql, "UPDATE credentials SET passwordid = %d WHERE "
+		"id = %d",
+		password_id, (int)credential_rowid);
+	ret = sqlite3_exec(handle, sql, 0, 0, 0);
+	free(sql);
+
+fail:
+	return ret;
+}
+
 int addCmd_execute(void)
 {
 	int ret;
@@ -154,6 +207,7 @@ int addCmd_execute(void)
 	}
 
 	map_username(handle, username, credentials_rowid);
+	map_password(handle, password, credentials_rowid);
 
 	sqlite3_close(handle);
 
