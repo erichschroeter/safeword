@@ -177,11 +177,17 @@ int addCmd_execute(void)
 	sqlite3* handle;
 	sqlite3_int64 credentials_rowid;
 	char* sql;
+	char* db;
 
 	if (!username || !password)
 		return 0;
 
-	ret = sqlite3_open("/home/erich/safeword.sqlite3", &handle);
+	db = getenv("SAFEWORD_DB");
+	if (!db) {
+		ret = -ENOENT;
+		goto fail;
+	}
+	ret = sqlite3_open(db, &handle);
 	if (ret) {
 		fprintf(stderr, "failed to open database\n");
 		return -ret;
