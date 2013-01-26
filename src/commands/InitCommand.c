@@ -90,20 +90,17 @@ int initCmd_execute(void)
 	ret = sqlite3_exec(handle, query, 0, 0, 0);
 
 	query = "CREATE TABLE IF NOT EXISTS credentials ("
-		"id INTEGER PRIMARY KEY,"
-		"usernameid INTEGER,"
-		"passwordid INTEGER,"
-		"description TEXT,"
-		"FOREIGN KEY(usernameid) REFERENCES usernames(id)"
-		"FOREIGN KEY(passwordid) REFERENCES passwords(id)"
+		"id INTEGER PRIMARY KEY, "
+		"usernameid INTEGER REFERENCES usernames(id), "
+		"passwordid INTEGER REFERENCES passwords(id), "
+		"description TEXT "
 		")";
 	ret = sqlite3_exec(handle, query, 0, 0, 0);
 
 	query = "CREATE TABLE IF NOT EXISTS tagged_credentials ("
-		"credentialid INTEGER,"
-		"tagid INTEGER,"
-		"FOREIGN KEY(credentialid) REFERENCES credentials(id)"
-		"FOREIGN KEY(tagid) REFERENCES tags(id)"
+		"credentialid INTEGER NOT NULL REFERENCES credentials(id), "
+		"tagid INTEGER NOT NULL REFERENCES tags(id), "
+		"PRIMARY KEY (credentialid, tagid) "
 		")";
 	ret = sqlite3_exec(handle, query, 0, 0, 0);
 
