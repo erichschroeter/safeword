@@ -76,10 +76,7 @@ int tagCmd_parse(int argc, char** argv)
 			optind++;
 		}
 		optind = backup;
-	} else {
-		/* TODO list credential's tags */
 	}
-
 fail:
 	return ret;
 }
@@ -134,6 +131,12 @@ fail:
 	return ret;
 }
 
+static int print_tag_callback(void* not_used, int argc, char** argv, char** col_name)
+{
+	printf("%s\n", argv[0]);
+	return 0;
+}
+
 int tagCmd_execute(void)
 {
 	int ret, i, j;
@@ -151,13 +154,21 @@ int tagCmd_execute(void)
 		return -ret;
 	}
 
-	if (!tags)
-		goto fail;
-
-	for (i = 0; i < credential_ids_size; i++) {
-		for (j = 0; j < tags_size; j++) {
-			map_tag(handle, tags[j], credential_ids[i]);
+	if (tags) {
+		for (i = 0; i < credential_ids_size; i++) {
+			for (j = 0; j < tags_size; j++) {
+				map_tag(handle, tags[j], credential_ids[i]);
+			}
 		}
+	} else {
+		sql = calloc(100, sizeof(char));
+		if (!sql) {
+			ret = -ENOMEM;
+			goto fail;
+		}
+		sprintf(sql, "SELECT tag FROM tags");
+		ret = sqlite3_exec(handle, sql, print_tag_callback, 0, 0);
+		free(sql);
 	}
 
 	sqlite3_close(handle);
