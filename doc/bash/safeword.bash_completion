@@ -1,0 +1,54 @@
+_safeword()
+{
+	local cur prev opts args
+	COMPREPLY=()
+	cur="${COMP_WORDS[COMP_CWORD]}"
+	prev="${COMP_WORDS[COMP_CWORD-1]}"
+	subcommand="${COMP_WORDS[1]}"
+
+	#
+	# Complete the subcommands
+	#
+	opts="--version"
+	subcommands="help init add ls tag"
+
+	#
+	# Complete arguments for the subcommands
+	#
+	case "${subcommand}" in
+	help)
+		COMPREPLY=( $(compgen -W "${subcommands}" -- ${cur}) )
+		return 0
+		;;
+	init)
+		COMPREPLY=( $(compgen -f -d ${cur}) )
+		return 0
+		;;
+	add)
+		return 0
+		;;
+	ls)
+		return 0
+		;;
+	tag)
+		case "${prev}" in
+		tag)
+			local tags=$( safeword tag )
+			COMPREPLY=( $(compgen -W "${tags}" -- ${cur}) )
+			return 0
+			;;
+		*)
+			local tags=$( safeword tag )
+			COMPREPLY=( $(compgen -W "${tags}" -- ${cur}) )
+			return 0
+			;;
+		esac
+		;;
+	*)
+		;;
+	esac
+
+	COMPREPLY=( $(compgen -W "${opts} ${subcommands}" -- ${cur}) )
+	return 0
+}
+complete -F _safeword safeword
