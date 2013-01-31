@@ -111,7 +111,8 @@ int listCmd_execute(void)
 		ret = sqlite3_exec(handle, sql, credentials_callback, 0, 0);
 		free(tags_concat);
 	} else {
-		sql = "SELECT id,description FROM credentials;";
+		sql = calloc(100, sizeof(char));
+		sprintf(sql, "SELECT id,description FROM credentials;");
 		ret = sqlite3_exec(handle, sql, credentials_callback, 0, 0);
 	}
 
