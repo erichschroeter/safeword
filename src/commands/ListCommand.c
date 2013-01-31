@@ -7,6 +7,7 @@
 
 #include "ListCommand.h"
 
+int printAll;
 static char** tags;
 static int tags_size;
 
@@ -19,7 +20,18 @@ char* listCmd_help(void)
 
 int listCmd_parse(int argc, char** argv)
 {
-	int ret, i, remaining_args = 0;
+	int ret, i, remaining_args = 0, c;
+	struct option long_options[] = {
+		{"all",	no_argument,	NULL,	'a'},
+	};
+
+	while ((c = getopt_long(argc, argv, "a", long_options, 0)) != -1) {
+		switch (c) {
+		case 'a':
+			printAll = 1;
+			break;
+		}
+	}
 
 	remaining_args = argc - optind;
 	if (remaining_args > 0) {
@@ -111,9 +123,19 @@ int listCmd_execute(void)
 		ret = sqlite3_exec(handle, sql, credentials_callback, 0, 0);
 		free(tags_concat);
 	} else {
-		sql = calloc(100, sizeof(char));
-		sprintf(sql, "SELECT id,description FROM credentials;");
-		ret = sqlite3_exec(handle, sql, credentials_callback, 0, 0);
+		if (printAll) {
+			sql = calloc(100, sizeof(char));
+			sprintf(sql, "SELECT id,description FROM credentials;");
+			ret = sqlite3_exec(handle, sql, credentials_callback, 0, 0);
+		} else {
+			sql = calloc(256, sizeof(char));
+			sprintf(sql, "SELECT id,description FROM credentials "
+			"WHERE id NOT IN ("
+			"SELECT credentialid FROM tagged_credentials "
+			"WHERE tagid IN ("
+			"SELECT id FROM tags));");
+			ret = sqlite3_exec(handle, sql, credentials_callback, 0, 0);
+		}
 	}
 
 	sqlite3_close(handle);
