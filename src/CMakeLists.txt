@@ -11,3 +11,5 @@ target_link_libraries(safeword
 commands
 ${SQLITE3_LIBRARIES}
 )
+
+install(TARGETS safeword RUNTIME DESTINATION bin)
