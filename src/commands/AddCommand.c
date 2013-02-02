@@ -5,6 +5,7 @@
 #include <getopt.h>
 #include <sqlite3.h>
 
+#include <safeword.h>
 #include "AddCommand.h"
 
 static char* username = NULL;
@@ -177,21 +178,13 @@ int addCmd_execute(void)
 	sqlite3* handle;
 	sqlite3_int64 credentials_rowid;
 	char* sql;
-	char* db;
 
 	if (!username || !password)
 		return 0;
 
-	db = getenv("SAFEWORD_DB");
-	if (!db) {
-		ret = -ENOENT;
+	ret = safeword_db_open(&handle);
+	if (ret)
 		goto fail;
-	}
-	ret = sqlite3_open(db, &handle);
-	if (ret) {
-		fprintf(stderr, "failed to open database\n");
-		return -ret;
-	}
 
 	sql = calloc(100, sizeof(char));
 	sprintf(sql, "INSERT INTO credentials DEFAULT VALUES");

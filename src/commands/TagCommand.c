@@ -5,6 +5,7 @@
 #include <getopt.h>
 #include <sqlite3.h>
 
+#include <safeword.h>
 #include "TagCommand.h"
 
 static int *credential_ids;
@@ -141,18 +142,11 @@ int tagCmd_execute(void)
 {
 	int ret, i, j;
 	sqlite3 *handle;
-	char *sql, *db;
+	char *sql;
 
-	db = getenv("SAFEWORD_DB");
-	if (!db) {
-		ret = -ENOENT;
+	ret = safeword_db_open(&handle);
+	if (ret)
 		goto fail;
-	}
-	ret = sqlite3_open(db, &handle);
-	if (ret) {
-		fprintf(stderr, "failed to open database\n");
-		return -ret;
-	}
 
 	if (tags) {
 		for (i = 0; i < credential_ids_size; i++) {

@@ -5,6 +5,7 @@
 #include <string.h>
 #include <sqlite3.h>
 
+#include <safeword.h>
 #include "ListCommand.h"
 
 int printAll;
@@ -75,18 +76,10 @@ int listCmd_execute(void)
 	int ret, i;
 	sqlite3* handle;
 	char* sql;
-	char* db;
 
-	db = getenv("SAFEWORD_DB");
-	if (!db) {
-		ret = -ENOENT;
+	ret = safeword_db_open(&handle);
+	if (ret)
 		goto fail;
-	}
-	ret = sqlite3_open(db, &handle);
-	if (ret) {
-		fprintf(stderr, "failed to open database\n");
-		return -ret;
-	}
 
 	if (tags) {
 		char* tags_concat;
