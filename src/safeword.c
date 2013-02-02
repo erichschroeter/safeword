@@ -113,8 +113,16 @@ int main(int argc, char** argv)
 
 		if (command_index >= 0 && matches == 1) {
 			res = command_table[command_index].parse(--argc, ++argv);
-			if (!res)
-				command_table[command_index].execute();
+			switch (res) {
+			case 0:
+				res = command_table[command_index].execute();
+				switch (res) {
+				case -ESAFEWORD_DB_NOEXIST:
+					fprintf(stderr, "database does not exist. See 'safeword help init'\n");
+					break;
+				}
+				break;
+			}
 		} else if (matches) {
 			print_possible_commands(command_str);
 		} else {
