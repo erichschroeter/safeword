@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "safeword.h"
 #include "commands/Command.h"
@@ -21,7 +22,12 @@ int safeword_db_open(sqlite3 **handle)
 		goto fail;
 	}
 
-	// TODO check if db is a file and exists
+	// fail if file does not exist, otherwise sqlite3 will create it
+	if (access(db, F_OK) == -1) {
+		ret = -ESAFEWORD_DB_NOEXIST;
+		fprintf(stderr, "safeword database '%s' does not exist\n", db);
+		goto fail;
+	}
 
 	ret = sqlite3_open(db, handle);
 	if (ret) {
