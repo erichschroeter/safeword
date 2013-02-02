@@ -73,16 +73,16 @@ static int credentials_callback(void* not_used, int argc, char** argv, char** co
 
 int listCmd_execute(void)
 {
-	int ret, i;
-	sqlite3* handle;
-	char* sql;
+	int ret = 0, i;
+	sqlite3 *handle;
+	char *sql;
 
 	ret = safeword_db_open(&handle);
 	if (ret)
 		goto fail;
 
 	if (tags) {
-		char* tags_concat;
+		char *tags_concat;
 		/* init to include the commas & null terminator */
 		int tags_concat_size = tags_size + 1;
 
@@ -115,19 +115,30 @@ int listCmd_execute(void)
 			tags_concat);
 		ret = sqlite3_exec(handle, sql, credentials_callback, 0, 0);
 		free(tags_concat);
+		free(sql);
 	} else {
 		if (printAll) {
 			sql = calloc(100, sizeof(char));
+			if (!sql) {
+				ret = -ENOMEM;
+				goto fail;
+			}
 			sprintf(sql, "SELECT id,description FROM credentials;");
 			ret = sqlite3_exec(handle, sql, credentials_callback, 0, 0);
+			free(sql);
 		} else {
 			sql = calloc(256, sizeof(char));
+			if (!sql) {
+				ret = -ENOMEM;
+				goto fail;
+			}
 			sprintf(sql, "SELECT id,description FROM credentials "
 			"WHERE id NOT IN ("
 			"SELECT credentialid FROM tagged_credentials "
 			"WHERE tagid IN ("
 			"SELECT id FROM tags));");
 			ret = sqlite3_exec(handle, sql, credentials_callback, 0, 0);
+			free(sql);
 		}
 	}
 
@@ -137,6 +148,5 @@ fail:
 	for (i = 0; i < tags_size; i++)
 		free(tags[i]);
 	free(tags);
-	free(sql);
-	return 0;
+	return ret;
 }
