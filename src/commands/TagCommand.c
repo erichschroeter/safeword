@@ -140,7 +140,7 @@ static int print_tag_callback(void* not_used, int argc, char** argv, char** col_
 
 int tagCmd_execute(void)
 {
-	int ret, i, j;
+	int ret = 0, i, j;
 	sqlite3 *handle;
 	char *sql;
 
@@ -171,5 +171,5 @@ fail:
 	for (i = 0; i < tags_size; i++)
 		free(tags[i]);
 	free(tags);
-	return 0;
+	return ret;
 }
