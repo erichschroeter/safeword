@@ -1,3 +1,6 @@
+#ifndef SAFEWORD_H
+#define SAFEWORD_H
+
 /*
  * Do not manually modify the VERSION defines; they are auto-generated
  */
@@ -5,3 +8,13 @@
 #define VERSION_MINOR @VERSION_MINOR@
 #define VERSION_PATCH @VERSION_PATCH@
 #define VERSION "@VERSION_MAJOR@.@VERSION_MINOR@.@VERSION_PATCH@"
+
+#include <errno.h>
+#include <sqlite3.h>
+
+#define ESAFEWORD_ENV_NOT_SET	256
+#define ESAFEWORD_DB_NOEXIST	ENOENT
+
+int open_safeword_db(sqlite3* handle);
+
+#endif // SAFEWORD_H
