@@ -8,6 +8,7 @@ import os
 import json
 
 enc = locale.getpreferredencoding()
+safeword_db = os.path.join(os.getcwd(), "blackbox.safeword")
 
 def console_print(st=u"", f=sys.stdout, linebreak=True):
 	global enc
@@ -47,13 +48,12 @@ The "answer" return value is one of "yes" or "no".
 			console_print(u"Please respond with 'yes' or 'no' (or 'y' or 'n').")
 
 def safeword_db_exists():
-	safeword_db_file = os.path.join(os.getcwd(), "blackbox.safeword")
-	if not os.path.exists(safeword_db_file):
-		if query_yes_no(u"create '" + safeword_db_file + "'?"):
-			console_print(u"creating '" + safeword_db_file + "'")
-			os.system("safeword init " + safeword_db_file)
+	if not os.path.exists(safeword_db):
+		if query_yes_no(u"create '" + safeword_db + "'?"):
+			console_print(u"creating '" + safeword_db + "'")
+			os.system("safeword init " + safeword_db)
 
-	return os.path.exists(safeword_db_file)
+	return os.path.exists(safeword_db)
 
 commands = {}
 aliases = {}
