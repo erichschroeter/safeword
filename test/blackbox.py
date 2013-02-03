@@ -18,6 +18,34 @@ def console_print(st=u"", f=sys.stdout, linebreak=True):
 def console_flush(f=sys.stdout):
 	f.flush()
 
+def query_yes_no(question, default="no"):
+	u"""Ask a yes/no question via raw_input() and return their answer.
+
+"question" is a string that is presented to the user.
+"default" is the presumed anser if the user just hits <Enter>.
+	It must be "yes" (the default), "no" or None (meaning an answer is required of the user).
+
+The "answer" return value is one of "yes" or "no".
+"""
+	valid = {"yes":True, "y":True, "ye":True, "no":False, "n":False}
+	if default == None:
+		prompt = u" [y/n] "
+	elif default == "yes":
+		prompt = u" [Y/n] "
+	elif default == "no":
+		prompt = u" [y/N] "
+	else:
+		raise ValueError("invalid default answer: '%s'" % default)
+	while True:
+		console_print(question + prompt)
+		choice = raw_input().lower()
+		if default is not None and choice == '':
+			return valid[default]
+		elif choice in valid:
+			return valid[choice]
+		else:
+			console_print(u"Please respond with 'yes' or 'no' (or 'y' or 'n').")
+
 commands = {}
 aliases = {}
 
