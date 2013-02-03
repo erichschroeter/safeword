@@ -46,6 +46,15 @@ The "answer" return value is one of "yes" or "no".
 		else:
 			console_print(u"Please respond with 'yes' or 'no' (or 'y' or 'n').")
 
+def safeword_db_exists():
+	safeword_db_file = os.path.join(os.getcwd(), "blackbox.safeword")
+	if not os.path.exists(safeword_db_file):
+		if query_yes_no(u"create '" + safeword_db_file + "'?"):
+			console_print(u"creating '" + safeword_db_file + "'")
+			os.system("safeword init " + safeword_db_file)
+
+	return os.path.exists(safeword_db_file)
+
 commands = {}
 aliases = {}
 
