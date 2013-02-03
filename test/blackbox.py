@@ -113,6 +113,25 @@ def usage(argv):
 		console_print(" %-*s%s" % (spacing, o[0], o[1]))
 	console_print()
 
+@command
+def help(argv):
+	u"""provide help
+blackbox help [COMMAND]
+
+With no arguments, print a list of commands and a short description of each. With a comand, print descriptive help on how to use the command.
+"""
+	if not argv:
+		return usage(argv)
+	for command in commands:
+		if command == argv[0]:
+			console_print(commands[command].__doc__.split('\n', 1)[1].decode('ascii'))
+			return
+	for alias in aliases:
+		if alias == argv[0]:
+			console_print(aliases[alias].__doc__.split('\n', 1)[1].decode('ascii'))
+			return
+	console_print(u"unknown command '%s'" % argv[0], f=sys.stderr)
+
 def main(argv):
 	global commands
 
