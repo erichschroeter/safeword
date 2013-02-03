@@ -98,9 +98,9 @@ Populates the safeword database with test data contained within each FILE.
 		data = json.load(json_data)
 		for cred in data:
 			creds += 1
-			print "safeword add -m \"" + cred["message"] + "\" " + cred["username"] + " " + cred["password"]
+			os.system("safeword add -m \"" + cred["message"] + "\" " + cred["username"] + " " + cred["password"])
 		json_data.close()
-		print "populated safeword database with " + str(creds) + " credentials"
+	print "populated safeword database with " + str(creds) + " credentials"
 
 def usage(argv):
 	console_print(u"blackbox command-line interface\n")
