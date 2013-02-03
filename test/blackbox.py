@@ -72,6 +72,7 @@ def command(method):
 def requires_safeword_db(method):
 	def newmethod(*n, **kw):
 		if safeword_db_exists():
+			os.environ['SAFEWORD_DB'] = safeword_db
 			return method(*n, **kw)
 		else:
 			console_print(u"Safeword database does not exist!")
