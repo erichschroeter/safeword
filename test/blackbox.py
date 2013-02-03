@@ -69,7 +69,18 @@ def command(method):
 		method.__doc__ += u"\nAliases: %s" % ",".join(method_aliases)
 	return method
 
+def requires_safeword_db(method):
+	def newmethod(*n, **kw):
+		if safeword_db_exists():
+			return method(*n, **kw)
+		else:
+			console_print(u"Safeword database does not exist!")
+	newmethod.func_name = method.func_name
+	newmethod.__doc__ = method.__doc__
+	return newmethod
+
 @command
+@requires_safeword_db
 def populate(args):
 	u"""populate safeword database with test data
 blackbox populate [FILE]...
