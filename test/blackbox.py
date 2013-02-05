@@ -88,8 +88,6 @@ blackbox populate [FILE]...
 
 Populates the safeword database with test data contained within each FILE.
 """
-	from pprint import pprint
-
 	creds = 0
 
 	for file in args:
@@ -97,10 +95,16 @@ Populates the safeword database with test data contained within each FILE.
 		json_data = open(file)
 		data = json.load(json_data)
 		for cred in data:
-			creds += 1
-			os.system("safeword add -m \"" + cred["message"] + "\" " + cred["username"] + " " + cred["password"])
+			cmd = ""
+			if "message" in cred and "username" in cred and "password" in cred:
+				cmd = "safeword add -m \"%s\" %s %s" % (cred["message"], cred["username"], cred["password"])
+			elif "username" in cred and "password" in cred:
+				cmd = "safeword add %s %s" % (cred["username"], cred["password"])
+			if cmd != "":
+				os.system(cmd)
+				creds += 1
 		json_data.close()
-	print "populated safeword database with " + str(creds) + " credentials"
+	print "populated '%s' with %d credentials" % (safeword_db, creds)
 
 def usage(argv):
 	console_print(u"blackbox command-line interface\n")
