@@ -88,6 +88,11 @@ blackbox populate [FILE]...
 
 Populates the safeword database with test data contained within each FILE.
 """
+	def tag(cred_id, tags_str):
+		if tags_str != "":
+			cmd = "safeword tag %s %s" % (cred_id, tags_str)
+			os.system(cmd)
+
 	creds = 0
 
 	for file in args:
@@ -103,6 +108,13 @@ Populates the safeword database with test data contained within each FILE.
 			if cmd != "":
 				os.system(cmd)
 				creds += 1
+			if "tags" in cred:
+				import commands
+				cmd = "safeword ls | grep \"%s\"" % cred["message"]
+				status, output = commands.getstatusoutput(cmd)
+				cred_id = output.partition(" ")
+				tags_str = " ".join(cred["tags"])
+				tag(cred_id[0], tags_str)
 		json_data.close()
 	print "populated '%s' with %d credentials" % (safeword_db, creds)
 
