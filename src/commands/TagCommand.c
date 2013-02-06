@@ -17,7 +17,17 @@ static sqlite3_int64 tag_id;
 char* tagCmd_help(void)
 {
 	return "SYNOPSIS\n"
-"	tag ID TAGS ...\n"
+"	tag [-d | --delete] [-f | --force] [ID] TAGS ...\n"
+"\n"
+"DESCRIPTION\n"
+"	This command maps tags to credentials within the safeword database.\n"
+"\n"
+"OPTIONS\n"
+"	-d, --delete\n"
+"	    Delete tag(s) from the safeword database. If any credentials are\n"
+"	    mapped the --force option must be used.\n"
+"	-f, --force\n"
+"	    Used with the --delete option to force a mapped tag to be removed.\n"
 "\n";
 }
 
@@ -25,15 +35,15 @@ int tagCmd_parse(int argc, char** argv)
 {
 	int ret = 0, remaining_args = 0, c, backup;
 	struct option long_options[] = {
-		{"untag",	no_argument,	NULL,	'u'},
-		{"list",	no_argument,	NULL,	'l'},
+		{"delete",	no_argument,	NULL,	'd'},
+		{"force",	no_argument,	NULL,	'f'},
 	};
 
-	while ((c = getopt_long(argc, argv, "", long_options, 0)) != -1) {
+	while ((c = getopt_long(argc, argv, "df", long_options, 0)) != -1) {
 		switch (c) {
-		case 'l':
+		case 'd':
 			break;
-		case 'u':
+		case 'f':
 			break;
 		}
 	}
