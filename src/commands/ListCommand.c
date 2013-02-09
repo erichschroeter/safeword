@@ -15,7 +15,15 @@ static int tags_size;
 char* listCmd_help(void)
 {
 	return "SYNOPSIS\n"
-"	list [ TAGS ... ]\n"
+"	list [-a | --all] [ TAGS ... ]\n"
+"DESCRIPTION\n"
+"	This command lists the credentials stored in the safeword database.\n"
+"	Without any arguments only credentials with tags are displayed,\n"
+"	otherwise only credentials with the specified tags are displayed.\n"
+"\n"
+"OPTIONS\n"
+"	-a, --all\n"
+"	    list all credentials\n"
 "\n";
 }
 
