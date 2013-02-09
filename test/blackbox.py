@@ -182,6 +182,26 @@ With no arguments, print a list of commands and a short description of each. Wit
 			return
 	console_print(u"unknown command '%s'" % argv[0], f=sys.stderr)
 
+# -------------------- start tests --------------------
+
+@test
+def testInitOnExistingDatabase():
+	u"""test that the 'init' command does not overwrite existing database without the -f or --force option
+"""
+	# get file last modified time and compare that it hasn't changed after running the init command
+	import subprocess
+	before = os.path.getctime(safeword_db)
+	p = subprocess.Popen(["safeword", "init", safeword_db])
+	out, err = p.communicate()
+	after = os.path.getctime(safeword_db)
+
+	if before == after:
+		return True
+	else:
+		return False
+
+# -------------------- end tests --------------------
+
 def main(argv):
 	global commands
 
