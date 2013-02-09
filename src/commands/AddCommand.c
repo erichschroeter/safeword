@@ -19,6 +19,15 @@ char* addCmd_help(void)
 {
 	return "SYNOPSIS\n"
 "	add [-m | --message MESSAGE] USERNAME PASSWORD\n"
+"\n"
+"DESCRIPTION\n"
+"	This command adds credentials to the safeword database. The message\n"
+"	option is helpful when listing credentials to see a short description\n"
+"	of what the credential's intended purpose is.\n"
+"\n"
+"OPTIONS\n"
+"	-m, --message\n"
+"	    Set a description for what the credential is for.\n"
 "\n";
 }
 
