@@ -118,6 +118,39 @@ Populates the safeword database with test data contained within each FILE.
 		json_data.close()
 	print "populated '%s' with %d credentials" % (safeword_db, creds)
 
+tests = {}
+
+def test(method):
+	global tests
+	assert method.__doc__, "All tests need properly formatted docstrings (even %r!!)" % method
+	if hasattr(method, 'im_func'): # bound method, if we ever have one
+		method = method.im_func
+	tests[method.func_name] = method
+	return method
+
+@command
+@requires_safeword_db
+def run(args):
+	u"""run black box tests from specified files
+blackbox test [FILE]...
+
+Runs black box tests on the test database. Files specified should contain @test functions.
+"""
+	global tests
+
+	tests_passed = 0
+	tests_failed = 0
+
+	for test in tests:
+		result = tests[test]()
+		if result == True:
+			tests_passed += 1
+		else:
+			tests_failed += 1
+	
+	console_print(u"Test Results\n------------------")
+	console_print(u"passed: %d\nfailed: %d" % (tests_passed, tests_failed))
+
 def usage(argv):
 	console_print(u"blackbox command-line interface\n")
 	console_print(u"commands:\n")
