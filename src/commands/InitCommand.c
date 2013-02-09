@@ -8,6 +8,8 @@
 
 #include "InitCommand.h"
 
+static int force;
+
 static char* file = NULL;
 
 char* initCmd_help(void)
@@ -24,7 +26,6 @@ char* initCmd_help(void)
 int initCmd_parse(int argc, char** argv)
 {
 	int ret = 0;
-	int force = 0;
 	int c;
 	struct option long_options[] = {
 		{"force",	no_argument,	NULL,	'f'},
@@ -33,7 +34,7 @@ int initCmd_parse(int argc, char** argv)
 	while ((c = getopt_long(argc, argv, "f", long_options, 0)) != -1) {
 		switch (c) {
 		case 'f':
-			force++;
+			force = 1;
 			break;
 		}
 	}
@@ -69,6 +70,19 @@ int initCmd_execute(void)
 
 	if (!file)
 		return 0;
+
+	if (!access(file, F_OK)) {
+		if (force) {
+			if  (remove(file) != 0) {
+				ret = -EIO;
+				goto fail;
+			}
+			printf("removed '%s'\n", file);
+		} else {
+			ret = -EEXIST;
+			goto fail;
+		}
+	}
 
 	ret = sqlite3_open(file, &handle);
 	if (ret) {
@@ -106,5 +120,6 @@ int initCmd_execute(void)
 
 	sqlite3_close(handle);
 
+fail:
 	return 0;
 }
