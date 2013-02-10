@@ -89,6 +89,7 @@ def requires_safeword_db(method):
 	return newmethod
 
 @command
+@alias('pop')
 @requires_safeword_db
 def populate(args):
 	u"""populate safeword database with test data
