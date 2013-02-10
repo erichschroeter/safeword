@@ -69,6 +69,14 @@ def command(method):
 		method.__doc__ += u"\nAliases: %s" % ",".join(method_aliases)
 	return method
 
+def alias(name):
+	def decorator(method):
+		global commands, aliases
+		assert name not in commands, "This alias is the name of a command."
+		aliases[name] = method
+		return method
+	return decorator
+
 def requires_safeword_db(method):
 	def newmethod(*n, **kw):
 		if safeword_db_exists():
@@ -210,7 +218,7 @@ def main(argv):
 	# point to separate the argv list
 	cut = None
 	for i in range(len(argv)):
-		if argv[i] in commands:
+		if argv[i] in commands or argv[i] in aliases:
 			cut = i
 			break
 
