@@ -15,6 +15,7 @@
 #define ESAFEWORD_ENV_NOT_SET	256
 #define ESAFEWORD_DB_NOEXIST	ENOENT
 
-int open_safeword_db(sqlite3* handle);
+int safeword_db_open(sqlite3 **handle);
+int safeword_tag_credential(sqlite3* handle, sqlite3_int64 credential_id, const char *tag);
 
 #endif // SAFEWORD_H
