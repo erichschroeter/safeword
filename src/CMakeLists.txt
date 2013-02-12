@@ -1,6 +1,7 @@
 add_subdirectory(commands)
 
 set(SRCS
+main.c
 safeword.c
 )
 
