@@ -36,12 +36,6 @@ char* tagCmd_help(void)
 "\n";
 }
 
-static int tag_callback(void* not_used, int argc, char** argv, char** col_name)
-{
-	tag_id = atoi(argv[0]);
-	return 0;
-}
-
 static int delete_tag_callback(void* not_used, int argc, char** argv, char** col_name)
 {
 	tag_id = atoi(argv[0]);
@@ -67,49 +61,6 @@ static int delete_tag(sqlite3* handle, const char* tag)
 	sprintf(sql, "DELETE FROM tags WHERE tag='%s';", tag);
 	ret = sqlite3_exec(handle, sql, delete_tag_callback, 0, 0);
 	free(sql);
-fail:
-	return ret;
-}
-
-static int map_tag(sqlite3* handle, const char* tag, sqlite3_int64 credential_id)
-{
-	int ret;
-	char *sql;
-
-	tag_id = -1; /* set to invalid value to represent it does not exist */
-
-	sql = calloc(strlen(tag) + 100, sizeof(char));
-	if (!sql) {
-		ret = -ENOMEM;
-		goto fail;
-	}
-	sprintf(sql, "SELECT id FROM tags WHERE tag='%s'", tag);
-	ret = sqlite3_exec(handle, sql, tag_callback, &credential_id, 0);
-	free(sql);
-
-	if (tag_id == -1) {
-		sql = calloc(strlen(tag) + 100, sizeof(char));
-		if (!sql) {
-			ret = -ENOMEM;
-			goto fail;
-		}
-		sprintf(sql, "INSERT INTO tags (tag) VALUES ('%s')", tag);
-		ret = sqlite3_exec(handle, sql, 0, 0, 0);
-		free(sql);
-		tag_id = sqlite3_last_insert_rowid(handle);
-	}
-
-	sql = calloc(strlen(tag) + 256, sizeof(char));
-	if (!sql) {
-		ret = -ENOMEM;
-		goto fail;
-	}
-	sprintf(sql, "INSERT OR REPLACE INTO tagged_credentials "
-		"(credentialid, tagid) VALUES (%d, %d)",
-		credential_id, tag_id);
-	ret = sqlite3_exec(handle, sql, 0, 0, 0);
-	free(sql);
-
 fail:
 	return ret;
 }
@@ -240,7 +191,7 @@ int tagCmd_execute(void)
 	} else if (tags && credential_ids) {
 		for (i = 0; i < credential_ids_size; i++) {
 			for (j = 0; j < tags_size; j++) {
-				map_tag(handle, tags[j], credential_ids[i]);
+				safeword_tag_credential(handle, credential_ids[i], tags[j]);
 			}
 		}
 	} else {
