@@ -97,35 +97,37 @@ blackbox populate [FILE]...
 
 Populates the safeword database with test data contained within each FILE.
 """
-	def tag(cred_id, tags_str):
-		if tags_str != "":
-			cmd = "safeword tag %s %s" % (cred_id, tags_str)
-			os.system(cmd)
+	import subprocess
 
 	creds = 0
 
 	for file in args:
-		print "populating with " + os.path.abspath(file)
+		console_print(u"populating with '%s'" % os.path.abspath(file))
 		json_data = open(file)
 		data = json.load(json_data)
 		for cred in data:
-			cmd = ""
-			if "message" in cred and "username" in cred and "password" in cred:
-				cmd = "safeword add -m \"%s\" %s %s" % (cred["message"], cred["username"], cred["password"])
+			p = None
+			if "username" in cred and "password" in cred and "message" in cred and "tags" in cred:
+				tags_str = ",".join(cred["tags"])
+				p = subprocess.Popen(["safeword", "add",
+					"-m", cred["message"],
+					"-t", tags_str,
+					cred["username"],
+					cred["password"]])
+			elif "username" in cred and "password" in cred and "message" in cred:
+				p = subprocess.Popen(["safeword", "add",
+					"-m", cred["message"],
+					cred["username"],
+					cred["password"]])
 			elif "username" in cred and "password" in cred:
-				cmd = "safeword add %s %s" % (cred["username"], cred["password"])
-			if cmd != "":
-				os.system(cmd)
+				p = subprocess.Popen(["safeword", "add",
+					cred["username"],
+					cred["password"]])
+			if p != None:
+				out, err = p.communicate()
 				creds += 1
-			if "tags" in cred:
-				import commands
-				cmd = "safeword ls | grep \"%s\"" % cred["message"]
-				status, output = commands.getstatusoutput(cmd)
-				cred_id = output.partition(" ")
-				tags_str = " ".join(cred["tags"])
-				tag(cred_id[0], tags_str)
 		json_data.close()
-	print "populated '%s' with %d credentials" % (safeword_db, creds)
+	console_print(u"populated '%s' with %d credentials" % (safeword_db, creds))
 
 tests = {}
 
