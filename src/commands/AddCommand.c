@@ -11,6 +11,7 @@
 static char* username = NULL;
 static char* password = NULL;
 static char* description = NULL;
+static char* tags = NULL;
 
 static int username_id;
 static int password_id;
@@ -18,7 +19,7 @@ static int password_id;
 char* addCmd_help(void)
 {
 	return "SYNOPSIS\n"
-"	add [-m | --message MESSAGE] USERNAME PASSWORD\n"
+"	add [-m | --message MESSAGE] [-t | --tag TAG,...] USERNAME PASSWORD\n"
 "\n"
 "DESCRIPTION\n"
 "	This command adds credentials to the safeword database. The message\n"
@@ -28,6 +29,8 @@ char* addCmd_help(void)
 "OPTIONS\n"
 "	-m, --message\n"
 "	    Set a description for what the credential is for.\n"
+"	-t, --tag\n"
+"	    Tag the credential with the comma-separated list of tags.\n"
 "\n";
 }
 
@@ -36,9 +39,10 @@ int addCmd_parse(int argc, char** argv)
 	int ret = 0, c;
 	struct option long_options[] = {
 		{"message",	required_argument,	NULL,	'm'},
+		{"tag",	required_argument,	NULL,	't'},
 	};
 
-	while ((c = getopt_long(argc, argv, "m:", long_options, 0)) != -1) {
+	while ((c = getopt_long(argc, argv, "m:t:", long_options, 0)) != -1) {
 		switch (c) {
 		case 'm':
 			description = calloc(strlen(optarg), sizeof(char));
@@ -47,6 +51,14 @@ int addCmd_parse(int argc, char** argv)
 				goto fail;
 			}
 			description = strcpy(description, optarg);
+			break;
+		case 't':
+			tags = calloc(strlen(optarg), sizeof(char));
+			if (!tags) {
+				ret = -ENOMEM;
+				goto fail;
+			}
+			strcpy(tags, optarg);
 			break;
 		}
 	}
@@ -214,6 +226,16 @@ int addCmd_execute(void)
 		free(sql);
 	}
 
+	if (tags) {
+		char *tag;
+
+		tag = strtok(tags, ",");
+		while (tag != NULL) {
+			safeword_tag_credential(handle, credentials_rowid, tag);
+			tag = strtok(NULL, ",");
+		}
+	}
+
 	map_username(handle, username, credentials_rowid);
 	map_password(handle, password, credentials_rowid);
 
@@ -223,5 +245,6 @@ fail:
 	free(username);
 	free(password);
 	free(description);
+	free(tags);
 	return ret;
 }
