@@ -21,16 +21,23 @@ _safeword()
 		return 0
 		;;
 	init)
-		COMPREPLY=( $(compgen -f -d ${cur}) )
+		opts="--force"
+		COMPREPLY=( $(compgen -f -d  -W "${opts}" -- ${cur}) )
 		return 0
 		;;
 	add)
+		opts="--message --tag"
+		COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
 		return 0
 		;;
 	ls)
+		opts="--all"
+		local tags=$( safeword tag )
+		COMPREPLY=( $(compgen -W "${opts} ${tags}" -- ${cur}) )
 		return 0
 		;;
 	tag)
+		opts="--delete --force"
 		case "${prev}" in
 		tag)
 			local tags=$( safeword tag )
