@@ -36,12 +36,12 @@ _safeword()
 		opts="--delete --force"
 		case "${prev}" in
 		tag)
-			local tags=$( safeword tag )
-			COMPREPLY=( $(compgen -W "${tags}" -- ${cur}) )
+			local credentials=$( safeword ls --all | cut -d' ' -f1 )
+			COMPREPLY=( $(compgen -W "${credentials} ${opts}" -- ${cur}) )
 			;;
 		*)
 			local tags=$( safeword tag )
-			COMPREPLY=( $(compgen -W "${tags}" -- ${cur}) )
+			COMPREPLY=( $(compgen -W "${tags} ${opts}" -- ${cur}) )
 			;;
 		esac
 		;;
