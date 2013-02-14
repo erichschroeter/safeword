@@ -116,11 +116,12 @@ int listCmd_execute(void)
 			ret = -ENOMEM;
 			goto fail;
 		}
-		sprintf(sql, "SELECT id,description FROM credentials WHERE id IN ("
-			"SELECT credentialid FROM tagged_credentials "
-			"WHERE tagid IN "
-			"(SELECT id FROM tags WHERE tag IN (%s) LIMIT 1));",
-			tags_concat);
+		sprintf(sql, "SELECT c.id,c.description FROM credentials AS c "
+			"INNER JOIN tagged_credentials AS tc "
+			"INNER JOIN tags AS t ON "
+			"(c.id = tc.credentialid AND tc.tagid = t.id) WHERE "
+			"t.tag IN (%s) GROUP BY c.id HAVING COUNT(c.id) = %d;",
+			tags_concat, tags_size);
 		ret = sqlite3_exec(handle, sql, credentials_callback, 0, 0);
 		free(tags_concat);
 		free(sql);
