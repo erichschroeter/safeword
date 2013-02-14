@@ -18,23 +18,19 @@ _safeword()
 	case "${subcommand}" in
 	help)
 		COMPREPLY=( $(compgen -W "${subcommands}" -- ${cur}) )
-		return 0
 		;;
 	init)
 		opts="--force"
 		COMPREPLY=( $(compgen -f -d  -W "${opts}" -- ${cur}) )
-		return 0
 		;;
 	add)
 		opts="--message --tag"
 		COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
-		return 0
 		;;
 	ls)
 		opts="--all"
 		local tags=$( safeword tag )
 		COMPREPLY=( $(compgen -W "${opts} ${tags}" -- ${cur}) )
-		return 0
 		;;
 	tag)
 		opts="--delete --force"
@@ -42,20 +38,18 @@ _safeword()
 		tag)
 			local tags=$( safeword tag )
 			COMPREPLY=( $(compgen -W "${tags}" -- ${cur}) )
-			return 0
 			;;
 		*)
 			local tags=$( safeword tag )
 			COMPREPLY=( $(compgen -W "${tags}" -- ${cur}) )
-			return 0
 			;;
 		esac
 		;;
 	*)
+		COMPREPLY=( $(compgen -W "${opts} ${subcommands}" -- ${cur}) )
 		;;
 	esac
 
-	COMPREPLY=( $(compgen -W "${opts} ${subcommands}" -- ${cur}) )
 	return 0
 }
 complete -F _safeword safeword
