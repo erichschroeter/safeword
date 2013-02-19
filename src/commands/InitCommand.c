@@ -100,11 +100,17 @@ int initCmd_execute(void)
 	ret = sqlite3_exec(handle, query, 0, 0, 0);
 
 	query = "CREATE TABLE IF NOT EXISTS usernames "
-		"(id INTEGER PRIMARY KEY, username TEXT)";
+		"(id INTEGER PRIMARY KEY, "
+		"username TEXT, "
+		"UNIQUE (username) ON CONFLICT ABORT"
+		");";
 	ret = sqlite3_exec(handle, query, 0, 0, 0);
 
 	query = "CREATE TABLE IF NOT EXISTS passwords "
-		"(id INTEGER PRIMARY KEY, password TEXT)";
+		"(id INTEGER PRIMARY KEY, "
+		"password TEXT, "
+		"UNIQUE (password) ON CONFLICT ABORT "
+		");";
 	ret = sqlite3_exec(handle, query, 0, 0, 0);
 
 	query = "CREATE TABLE IF NOT EXISTS credentials ("
