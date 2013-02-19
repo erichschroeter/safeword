@@ -118,14 +118,14 @@ int initCmd_execute(void)
 		"usernameid INTEGER REFERENCES usernames(id), "
 		"passwordid INTEGER REFERENCES passwords(id), "
 		"description TEXT "
-		")";
+		");";
 	ret = sqlite3_exec(handle, query, 0, 0, 0);
 
 	query = "CREATE TABLE IF NOT EXISTS tagged_credentials ("
-		"credentialid INTEGER NOT NULL REFERENCES credentials(id), "
-		"tagid INTEGER NOT NULL REFERENCES tags(id), "
+		"credentialid INTEGER NOT NULL REFERENCES credentials(id) ON DELETE CASCADE, "
+		"tagid INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE, "
 		"PRIMARY KEY (credentialid, tagid) "
-		")";
+		");";
 	ret = sqlite3_exec(handle, query, 0, 0, 0);
 
 	sqlite3_close(handle);
