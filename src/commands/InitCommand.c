@@ -77,7 +77,6 @@ int initCmd_execute(void)
 				ret = -EIO;
 				goto fail;
 			}
-			printf("removed '%s'\n", file);
 		} else {
 			ret = -EEXIST;
 			goto fail;
