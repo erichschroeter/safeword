@@ -43,6 +43,9 @@ int safeword_db_open(sqlite3 **handle)
 		goto fail;
 	}
 
+	/* enable foreign key support in Sqlite3 so delete cascading works. */
+	ret = sqlite3_exec(*handle, "PRAGMA foreign_keys = ON;", 0, 0, 0);
+
 fail:
 	return ret;
 }
