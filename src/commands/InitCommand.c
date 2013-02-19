@@ -92,7 +92,11 @@ int initCmd_execute(void)
 	free(file);
 
 	query = "CREATE TABLE IF NOT EXISTS tags "
-		"(id INTEGER PRIMARY KEY, tag TEXT)";
+		"(id INTEGER PRIMARY KEY, "
+		"tag TEXT NOT NULL, "
+		"UNIQUE (tag) ON CONFLICT ABORT, "
+		"CONSTRAINT no_empty_tag CHECK (tag != '')"
+		");";
 	ret = sqlite3_exec(handle, query, 0, 0, 0);
 
 	query = "CREATE TABLE IF NOT EXISTS usernames "
