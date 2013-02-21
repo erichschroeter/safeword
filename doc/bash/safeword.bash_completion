@@ -33,7 +33,7 @@ _safeword()
 		COMPREPLY=( $(compgen -W "${opts} ${tags}" -- ${cur}) )
 		;;
 	tag)
-		opts="--delete --force"
+		opts="--delete --force --move"
 		case "${prev}" in
 		tag)
 			local credentials=$( safeword ls --all | cut -d' ' -f1 )

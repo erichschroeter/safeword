@@ -9,20 +9,28 @@
 #include "TagCommand.h"
 
 #define MAXBUFFERSIZE 16
+#define EMULTIPLE_SUBCOMMANDS 257
 
 static int force;
-static int delete;
+
+struct array {
+	unsigned int size;
+	char **data;
+};
+
+struct tag_subcommand {
+	int	(*execute)(sqlite3 *handle, const struct array *tags);
+};
+static struct tag_subcommand tag_subcommand_;
 
 static int *credential_ids;
 static int credential_ids_size;
-static char **tags;
-static int tags_size;
-static sqlite3_int64 tag_id;
+static struct array *tags_;
 
 char* tagCmd_help(void)
 {
 	return "SYNOPSIS\n"
-"	tag [-d | --delete] [-f | --force] [ID] TAGS ...\n"
+"	tag [-d | --delete] [-f | --force] [-m | --move] [ID] TAGS ...\n"
 "\n"
 "DESCRIPTION\n"
 "	This command maps tags to credentials within the safeword database.\n"
@@ -33,13 +41,9 @@ char* tagCmd_help(void)
 "	    mapped the --force option must be used.\n"
 "	-f, --force\n"
 "	    Used with the --delete option to force a mapped tag to be removed.\n"
+"	-m, --move OLD NEW\n"
+"	    Move/rename an existing tag.\n"
 "\n";
-}
-
-static int delete_tag_callback(void* not_used, int argc, char** argv, char** col_name)
-{
-	tag_id = atoi(argv[0]);
-	return 0;
 }
 
 static int print_tag_callback(void* not_used, int argc, char** argv, char** col_name)
@@ -48,50 +52,102 @@ static int print_tag_callback(void* not_used, int argc, char** argv, char** col_
 	return 0;
 }
 
-static int delete_tag(sqlite3* handle, const char* tag)
+static int delete_tags(sqlite3* handle, const struct array *tags)
 {
-	int ret;
-	char *sql;
+	int ret = 0, i, char_count;
+	char input, input_buffer[MAXBUFFERSIZE];
 
-	sql = calloc(strlen(tag) + 100, sizeof(char));
-	if (!sql) {
-		ret = -ENOMEM;
-		goto fail;
+	if (!tags) {
+		fprintf(stderr, "no tags specified\n");
+		return -1;
 	}
-	sprintf(sql, "DELETE FROM tags WHERE tag='%s';", tag);
-	ret = sqlite3_exec(handle, sql, delete_tag_callback, 0, 0);
-	free(sql);
+
+	for (i = 0; i < tags->size; i++) {
+		if (force) {
+			safeword_delete_tag(handle, tags->data[i]);
+			continue;
+		}
+		printf("delete tag '%s'? (y/N) ", tags->data[i]);
+		char_count = 0;
+		input = getchar();
+		while ((input != '\n') && (char_count < MAXBUFFERSIZE)) {
+			input_buffer[char_count++] = input;
+			input = getchar();
+		}
+		input_buffer[char_count] = 0x00;
+
+		/* skip comparing if just enter was pressed */
+		if (!char_count)
+			continue;
+
+		if (!strncasecmp("yes", input_buffer, char_count)) {
+			safeword_delete_tag(handle, tags->data[i]);
+		} else if (!strncasecmp("quit", input_buffer, char_count) ||
+			!strncasecmp("q", input_buffer, char_count))
+			break;
+	}
+
 fail:
 	return ret;
 }
 
+static int rename_tag(sqlite3* handle, const struct array *tags)
+{
+	if (!tags) {
+		fprintf(stderr, "no tags specified\n");
+		return -1;
+	}
+
+	if (tags->size < 2) {
+		fprintf(stderr, "%s\n", tags->size ? "no new tag name specified" : "no tags specified");
+		return -1;
+	}
+
+	return safeword_rename_tag(handle, tags->data[0], tags->data[1]);
+}
+
 int tagCmd_parse(int argc, char** argv)
 {
-	int ret = 0, remaining_args = 0, c, backup;
+	int ret = 0, remaining_args = 0, i;
 	struct option long_options[] = {
 		{"delete",	no_argument,	NULL,	'd'},
 		{"force",	no_argument,	NULL,	'f'},
+		{"move",	no_argument,	NULL,	'm'},
 	};
 
-	while ((c = getopt_long(argc, argv, "df", long_options, 0)) != -1) {
-		switch (c) {
+	tag_subcommand_.execute = NULL;
+
+	while ((i = getopt_long(argc, argv, "dfm", long_options, 0)) != -1) {
+		switch (i) {
 		case 'd':
-			delete = 1;
+			if (tag_subcommand_.execute) {
+				ret = -EMULTIPLE_SUBCOMMANDS;
+				goto fail;
+			}
+			tag_subcommand_.execute = &delete_tags;
 			break;
 		case 'f':
 			force = 1;
+			break;
+		case 'm':
+			if (tag_subcommand_.execute) {
+				ret = -EMULTIPLE_SUBCOMMANDS;
+				goto fail;
+			}
+			tag_subcommand_.execute = &rename_tag;
 			break;
 		}
 	}
 
 	remaining_args = argc - optind;
-	backup = optind;
-	if (remaining_args > 1 && !delete) {
+
+	/* START of parsing credential ids */
+	if (!tag_subcommand_.execute && remaining_args > 0) {
 		int i = 0, id;
 		char *id_str;
 		char *ids_backup = calloc(strlen(argv[optind]), sizeof(char));
-		tags_size = 0;
-		tags = malloc(remaining_args * sizeof(*tags));
+		int tags_size = 0;
+		char **tags = malloc(remaining_args * sizeof(*tags));
 		if (!tags) {
 			ret = -ENOMEM;
 			goto fail;
@@ -119,36 +175,35 @@ int tagCmd_parse(int argc, char** argv)
 			i++;
 		}
 		optind++;
+		remaining_args--;
+	}
+	/* END of parsing credential ids */
 
-		for (i = 0; i < remaining_args - 1; i++) {
-			tags[i] = calloc(strlen(argv[optind]), sizeof(char));
-			if (!tags[i]) {
-				ret = -ENOMEM;
-				goto fail;
-			}
-			strcpy(tags[i], argv[optind]);
-			tags_size++;
-			optind++;
-		}
-		optind = backup;
-	} else if (remaining_args > 0 && delete) {
-		int i;
-		tags = malloc(remaining_args * sizeof(*tags));
-		if (!tags) {
+	/* START of parsing tags */
+	tags_ = malloc(sizeof(*tags_));
+	if (!tags_) {
+		ret = -ENOMEM;
+		goto fail;
+	}
+	tags_->size = 0;
+	tags_->data = malloc(remaining_args * sizeof(*tags_->data));
+	if (!tags_->data) {
+		ret = -ENOMEM;
+		goto fail;
+	}
+	/* copy tags to the tags array */
+	for (i = 0; i < remaining_args; i++) {
+		tags_->data[i] = calloc(strlen(argv[optind]), sizeof(char));
+		if (!tags_->data[i]) {
 			ret = -ENOMEM;
 			goto fail;
 		}
-		for (i = 0; i < remaining_args; i++) {
-			tags[i] = calloc(strlen(argv[optind]), sizeof(char));
-			if (!tags[i]) {
-				ret = -ENOMEM;
-				goto fail;
-			}
-			strcpy(tags[i], argv[optind]);
-			tags_size++;
-			optind++;
-		}
+		strcpy(tags_->data[i], argv[optind]);
+		tags_->size++;
+		optind++;
 	}
+	/* END of parsing tags */
+
 fail:
 	return ret;
 }
@@ -163,35 +218,12 @@ int tagCmd_execute(void)
 	if (ret)
 		goto fail;
 
-	if (tags && delete) {
-		for (i = 0; i < tags_size; i++) {
-			if (force) {
-				delete_tag(handle, tags[i]);
-				continue;
-			}
-			printf("delete tag '%s'? (y/N) ", tags[i]);
-			char_count = 0;
-			input = getchar();
-			while ((input != '\n') && (char_count < MAXBUFFERSIZE)) {
-				input_buffer[char_count++] = input;
-				input = getchar();
-			}
-			input_buffer[char_count] = 0x00;
-
-			/* skip comparing if just enter was pressed */
-			if (!char_count)
-				continue;
-
-			if (!strncasecmp("yes", input_buffer, char_count)) {
-				delete_tag(handle, tags[i]);
-			} else if (!strncasecmp("quit", input_buffer, char_count) ||
-				!strncasecmp("q", input_buffer, char_count))
-				break;
-		}
-	} else if (tags && credential_ids) {
+	if (tag_subcommand_.execute) {
+		tag_subcommand_.execute(handle, tags_);
+	} else if (tags_ && credential_ids) {
 		for (i = 0; i < credential_ids_size; i++) {
-			for (j = 0; j < tags_size; j++) {
-				safeword_tag_credential(handle, credential_ids[i], tags[j]);
+			for (j = 0; j < tags_->size; j++) {
+				safeword_tag_credential(handle, credential_ids[i], tags_->data[j]);
 			}
 		}
 	} else {
@@ -208,8 +240,8 @@ int tagCmd_execute(void)
 	sqlite3_close(handle);
 
 fail:
-	for (i = 0; i < tags_size; i++)
-		free(tags[i]);
-	free(tags);
+	for (i = 0; i < tags_->size; i++)
+		free(tags_->data[i]);
+	free(tags_);
 	return ret;
 }
