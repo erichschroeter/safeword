@@ -92,3 +92,37 @@ int safeword_tag_credential(sqlite3 *handle, sqlite3_int64 credential_id, const 
 fail:
 	return ret;
 }
+
+int safeword_delete_tag(sqlite3* handle, const char *tag)
+{
+	int ret;
+	char *sql;
+
+	sql = calloc(strlen(tag) + 100, sizeof(char));
+	if (!sql) {
+		ret = -ENOMEM;
+		goto fail;
+	}
+	sprintf(sql, "DELETE FROM tags WHERE tag='%s';", tag);
+	ret = sqlite3_exec(handle, sql, 0, 0, 0);
+	free(sql);
+fail:
+	return ret;
+}
+
+int safeword_rename_tag(sqlite3* handle, const char *old, const char *new)
+{
+	int ret;
+	char *sql;
+
+	sql = calloc(strlen(old) + strlen(new) + 100, sizeof(char));
+	if (!sql) {
+		ret = -ENOMEM;
+		goto fail;
+	}
+	sprintf(sql, "UPDATE tags SET tag = '%s' WHERE tag = '%s';", new, old);
+	ret = sqlite3_exec(handle, sql, 0, 0, 0);
+	free(sql);
+fail:
+	return ret;
+}

@@ -17,5 +17,7 @@
 
 int safeword_db_open(sqlite3 **handle);
 int safeword_tag_credential(sqlite3* handle, sqlite3_int64 credential_id, const char *tag);
+int safeword_delete_tag(sqlite3* handle, const char *tag);
+int safeword_rename_tag(sqlite3* handle, const char *old, const char *new);
 
 #endif // SAFEWORD_H
