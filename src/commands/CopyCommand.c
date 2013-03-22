@@ -1,8 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <getopt.h>
 #include <sqlite3.h>
 #include <time.h>
+#include <pthread.h>
+
+#include <X11/Xlib.h>
+#include <X11/Xatom.h>
+#include <X11/Xmu/Atoms.h>
 
 #include <safeword.h>
 #include "CopyCommand.h"
@@ -32,8 +38,119 @@ static int diff(struct timespec *start, struct timespec *end)
 		(start->tv_sec + (start->tv_nsec / 1000000000));
 }
 
+struct __async_waiting_data {
+	volatile int *waiting;
+	Display *dpy;
+	Window *win;
+	unsigned char *data;
+};
+
+static void* wait_for_clipboard_request(void *waiting_data)
+{
+	struct __async_waiting_data *data = (struct __async_waiting_data*) waiting_data;
+	Display *dpy = data->dpy;
+	Window win = *data->win;
+
+	XSelectInput(dpy, win, StructureNotifyMask);
+	XMapWindow(dpy, win);
+	XSelectionRequestEvent *req;
+	XEvent e, respond;
+	for(;;) {
+		XNextEvent(dpy, &e);
+		if (e.type == MapNotify) break;
+	}
+	XFlush(dpy);
+
+	XSelectInput(dpy, win, StructureNotifyMask+ExposureMask);
+	XSetSelectionOwner (dpy, XA_CLIPBOARD(dpy), win, CurrentTime);
+	while (*data->waiting) {
+		XFlush (dpy);
+		XNextEvent (dpy, &e);
+		if (e.type == SelectionRequest) {
+			req=&(e.xselectionrequest);
+			if (req->target == XA_STRING) {
+				XChangeProperty (dpy,
+					req->requestor,
+					req->property,
+					XA_STRING,
+					8,
+					PropModeReplace,
+					(unsigned char*) data->data,
+					32);
+				respond.xselection.property=req->property;
+			} else {
+				respond.xselection.property= None;
+			}
+			respond.xselection.type= SelectionNotify;
+			respond.xselection.display= req->display;
+			respond.xselection.requestor= req->requestor;
+			respond.xselection.selection=req->selection;
+			respond.xselection.target= req->target;
+			respond.xselection.time = req->time;
+			XSendEvent (dpy, req->requestor,0,0,&respond);
+			XFlush (dpy);
+		}
+	}
+}
+
 static int copy_credential_callback(void* secs, int argc, char** argv, char** col_name)
 {
+	unsigned int *seconds = secs;
+	volatile int waiting_ = 1;
+	unsigned char *data;
+	struct timespec start, now;
+	Display *dpy;
+	Window win;
+
+	/* copy the data to local variable that will stay in scope for waiting thread */
+	data = calloc(strlen(argv[0]) + 1, sizeof(char));
+	if (!data)
+		return -ENOMEM;
+	strcpy(data, argv[0]);
+
+	if (!(dpy = XOpenDisplay(NULL))) {
+		fprintf(stderr, "could not open display\n");
+		return;
+	}
+
+	/* create a window to trap events */
+	win = XCreateSimpleWindow(dpy, DefaultRootWindow(dpy), 0, 0, 1, 1, 0, 0, 0);
+
+	/* fork into the background, exit parent process */
+	pid_t pid;
+
+	pid = fork();
+	/* exit the parent process */
+	if (pid) {
+		exit(EXIT_SUCCESS);
+	}
+
+	/* Avoid making the current directory in use, in case it will need to be umounted */
+	chdir("/");
+
+	clock_gettime(CLOCK_MONOTONIC, &start);
+	clock_gettime(CLOCK_MONOTONIC, &now);
+
+	struct __async_waiting_data waiting_data;
+	waiting_data.waiting = &waiting_;
+	waiting_data.dpy = dpy;
+	waiting_data.win = &win;
+	waiting_data.data = data;
+
+	pthread_t tid;
+	pthread_create(&tid, NULL, &wait_for_clipboard_request, &waiting_data);
+
+	/* TODO hook up signal handler to change waiting_ */
+	while (waiting_) {
+		if (diff(&start, &now) > *seconds) {
+			pthread_cancel(tid);
+			waiting_ = 0;
+		}
+
+		clock_gettime(CLOCK_MONOTONIC, &now);
+	}
+
+	exit(EXIT_SUCCESS);
 }
 
 int copyCmd_parse(int argc, char** argv)
