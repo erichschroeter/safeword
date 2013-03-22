@@ -21,6 +21,10 @@ find_package(Sqlite3 REQUIRED)
 include_directories(${SQLITE3_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${SQLITE3_LIBRARIES})
 
+find_package(X11 REQUIRED)
+include_directories(${X11_INCLUDE_DIR})
+set(LIBS ${LIBS} ${X11_LIBRARIES} ${X11_Xmu_LIB})
+
 add_subdirectory(src)
 
 install(FILES "${PROJECT_SOURCE_DIR}/doc/bash/safeword.bash_completion"

@@ -11,6 +11,9 @@ add_executable(safeword ${SRCS})
 target_link_libraries(safeword
 commands
 ${SQLITE3_LIBRARIES}
+${X11_LIBRARIES}
+${X11_Xmu_LIB}
+rt
 )
 
 install(TARGETS safeword RUNTIME DESTINATION bin)
