@@ -10,7 +10,7 @@ _safeword()
 	# Complete the subcommands
 	#
 	opts="--version"
-	subcommands="help init add ls tag"
+	subcommands="help init add ls tag cp"
 
 	#
 	# Complete arguments for the subcommands
@@ -42,6 +42,18 @@ _safeword()
 		*)
 			local tags=$( safeword tag )
 			COMPREPLY=( $(compgen -W "${tags} ${opts}" -- ${cur}) )
+			;;
+		esac
+		;;
+	cp)
+		opts="--time"
+		case "${prev}" in
+		cp)
+			local credentials=$( safeword ls --all | cut -d' ' -f1 )
+			COMPREPLY=( $(compgen -W "${credentials} ${opts}" -- ${cur}) )
+			;;
+		*)
+			COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
 			;;
 		esac
 		;;
