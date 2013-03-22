@@ -7,6 +7,7 @@
 #include "commands/Command.h"
 
 static sqlite3_int64 tag_id;
+static int _id;
 
 static int tag_callback(void* not_used, int argc, char** argv, char** col_name)
 {
@@ -46,6 +47,96 @@ int safeword_db_open(sqlite3 **handle)
 	/* enable foreign key support in Sqlite3 so delete cascading works. */
 	ret = sqlite3_exec(*handle, "PRAGMA foreign_keys = ON;", 0, 0, 0);
 
+fail:
+	return ret;
+}
+
+static int id_callback(void* not_used, int argc, char** argv, char** col_name) { _id = atoi(argv[0]); return 0; }
+
+static int map_to_credential(sqlite3* handle, const char* password, const char* table, const char* field,
+	sqlite3_int64 credential_rowid)
+{
+	int ret;
+	char* sql;
+
+	_id = -1; // set to invalid value
+
+	sql = calloc(strlen(password) + 100, sizeof(char));
+	if (!sql) {
+		ret = -ENOMEM;
+		goto fail;
+	}
+	sprintf(sql, "SELECT id FROM %s WHERE %s='%s';", table, field, password);;
+	ret = sqlite3_exec(handle, sql, id_callback, &credential_rowid, 0);
+	free(sql);
+
+	if (_id == -1) {
+		sql = calloc(strlen(password) + 100, sizeof(char));
+		if (!sql) {
+			ret = -ENOMEM;
+			goto fail;
+		}
+
+		sprintf(sql, "INSERT INTO %s (%s) VALUES ('%s');", table, field, password);
+		ret = sqlite3_exec(handle, sql, 0, 0, 0);
+		free(sql);
+		_id = sqlite3_last_insert_rowid(handle);
+	}
+
+	sql = calloc(strlen(password) + 100, sizeof(char));
+	if (!sql) {
+		ret = -ENOMEM;
+		goto fail;
+	}
+
+	sprintf(sql, "UPDATE credentials SET %sid = %d WHERE id = %d;",
+		field, _id, (int)credential_rowid);
+	ret = sqlite3_exec(handle, sql, 0, 0, 0);
+	free(sql);
+
+fail:
+	return ret;
+}
+
+int map_username(sqlite3* handle, const char* username, sqlite3_int64 credential_rowid)
+{
+	map_to_credential(handle, username, "usernames", "username", credential_rowid);
+	return 0;
+}
+
+int map_password(sqlite3* handle, const char* password, sqlite3_int64 credential_rowid)
+{
+	map_to_credential(handle, password, "passwords", "password", credential_rowid);
+	return 0;
+}
+
+int safeword_credential_add(sqlite3* handle, sqlite3_int64 *credential_id,
+	const char *username, const char *password, const char *description)
+{
+	int ret = 0;
+	char* sql;
+
+	sql = calloc(100, sizeof(char));
+	sprintf(sql, "INSERT INTO credentials DEFAULT VALUES;");
+	ret = sqlite3_exec(handle, sql, 0, 0, 0);
+	free(sql);
+	*credential_id = sqlite3_last_insert_rowid(handle);
+
+	if (description) {
+		sql = calloc(strlen(description) + 100, sizeof(char));
+		if (!sql) {
+			ret = -ENOMEM;
+			goto fail;
+		}
+
+		sprintf(sql, "UPDATE credentials SET description = '%s' WHERE id = %d;",
+			description, *credential_id);
+		ret = sqlite3_exec(handle, sql, 0, 0, 0);
+		free(sql);
+	}
+
+	map_username(handle, username, *credential_id);
+	map_password(handle, password, *credential_id);
 fail:
 	return ret;
 }
