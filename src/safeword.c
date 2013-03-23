@@ -14,6 +14,18 @@
 
 static sqlite3_int64 tag_id;
 static int _id;
+static int _copy_once = 0;
+
+int safeword_config(const char* key, const char* value)
+{
+	if (!strcmp(key, "copy_once")) {
+		if (strlen(value) == 1 && value[0] == '1')
+			_copy_once = 1;
+	} else
+		return -1;
+
+	return 0;
+}
 
 static int tag_callback(void* not_used, int argc, char** argv, char** col_name)
 {
@@ -265,6 +277,10 @@ static void* wait_for_clipboard_request(void *waiting_data)
 					(unsigned char*) data->data,
 					strlen(data->data));
 				respond.xselection.property=req->property;
+
+				if (_copy_once) {
+					*data->waiting = 0;
+				}
 			} else {
 				respond.xselection.property= None;
 			}
