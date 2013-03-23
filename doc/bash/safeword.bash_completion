@@ -46,7 +46,7 @@ _safeword()
 		esac
 		;;
 	cp)
-		opts="--time"
+		opts="--time --username --password"
 		case "${prev}" in
 		cp)
 			local credentials=$( safeword ls --all | cut -d' ' -f1 )
