@@ -257,6 +257,10 @@ static void* wait_for_clipboard_request(void *waiting_data)
 	Window win = *data->win;
 	XSelectionRequestEvent *req;
 	XEvent e, respond;
+	static Atom targets;
+
+	if (!targets)
+		targets = XInternAtom(dpy, "TARGETS", False);
 
 	XSelectInput(dpy, win, PropertyChangeMask);
 	XSelectInput(dpy, win, StructureNotifyMask+ExposureMask);
@@ -267,11 +271,26 @@ static void* wait_for_clipboard_request(void *waiting_data)
 		XNextEvent(dpy, &e);
 		if (e.type == SelectionRequest) {
 			req=&(e.xselectionrequest);
-			if (req->target == XA_STRING) {
+			if (req->target == targets) {
+				Atom supported[] = {
+					XA_UTF8_STRING(dpy),
+					XA_STRING
+				};
 				XChangeProperty(dpy,
 					req->requestor,
 					req->property,
-					XA_STRING,
+					XA_ATOM,
+					32,
+					PropModeReplace,
+					(unsigned char*) supported,
+					(int) (sizeof(supported) / sizeof(Atom)));
+				respond.xselection.property=req->property;
+			} else if (req->target == XA_UTF8_STRING(dpy) ||
+				req->target == XA_STRING) {
+				XChangeProperty(dpy,
+					req->requestor,
+					req->property,
+					req->target,
 					8,
 					PropModeReplace,
 					(unsigned char*) data->data,
