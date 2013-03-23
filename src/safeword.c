@@ -2,6 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
+#include <pthread.h>
+
+#include <X11/Xlib.h>
+#include <X11/Xatom.h>
+#include <X11/Xmu/Atoms.h>
 
 #include "safeword.h"
 #include "commands/Command.h"
@@ -216,4 +222,156 @@ int safeword_rename_tag(sqlite3* handle, const char *old, const char *new)
 	free(sql);
 fail:
 	return ret;
+}
+
+/* returns the difference in milliseconds */
+static unsigned int diff(struct timespec *start, struct timespec *end)
+{
+	return ((end->tv_sec * 1000) + (end->tv_nsec / 1000000)) -
+		((start->tv_sec * 1000) + (start->tv_nsec / 1000000));
+}
+
+struct __async_waiting_data {
+	volatile int *waiting;
+	Display *dpy;
+	Window *win;
+	unsigned char *data;
+};
+
+static void* wait_for_clipboard_request(void *waiting_data)
+{
+	struct __async_waiting_data *data = (struct __async_waiting_data*) waiting_data;
+	Display *dpy = data->dpy;
+	Window win = *data->win;
+
+	XSelectInput(dpy, win, StructureNotifyMask);
+	XMapWindow(dpy, win);
+	XSelectionRequestEvent *req;
+	XEvent e, respond;
+	for(;;) {
+		XNextEvent(dpy, &e);
+		if (e.type == MapNotify) break;
+	}
+	XFlush(dpy);
+
+	XSelectInput(dpy, win, StructureNotifyMask+ExposureMask);
+	XSetSelectionOwner (dpy, XA_CLIPBOARD(dpy), win, CurrentTime);
+	while (*data->waiting) {
+		XFlush (dpy);
+		XNextEvent (dpy, &e);
+		if (e.type == SelectionRequest) {
+			req=&(e.xselectionrequest);
+			if (req->target == XA_STRING) {
+				XChangeProperty (dpy,
+					req->requestor,
+					req->property,
+					XA_STRING,
+					8,
+					PropModeReplace,
+					(unsigned char*) data->data,
+					32);
+				respond.xselection.property=req->property;
+			} else {
+				respond.xselection.property= None;
+			}
+			respond.xselection.type= SelectionNotify;
+			respond.xselection.display= req->display;
+			respond.xselection.requestor= req->requestor;
+			respond.xselection.selection=req->selection;
+			respond.xselection.target= req->target;
+			respond.xselection.time = req->time;
+			XSendEvent (dpy, req->requestor,0,0,&respond);
+			XFlush (dpy);
+		}
+	}
+}
+
+static int copy_credential_callback(void* millis, int argc, char** argv, char** col_name)
+{
+	unsigned int *ms = millis;
+	volatile int waiting = 1;
+	unsigned char *data;
+	struct timespec start, now;
+	Display *dpy;
+	Window win;
+
+	/* copy the data to local variable that will stay in scope for waiting thread */
+	data = calloc(strlen(argv[0]) + 1, sizeof(char));
+	if (!data)
+		return -ENOMEM;
+	strcpy(data, argv[0]);
+
+	if (!(dpy = XOpenDisplay(NULL))) {
+		fprintf(stderr, "could not open display\n");
+		return;
+	}
+
+	/* create a window to trap events */
+	win = XCreateSimpleWindow(dpy, DefaultRootWindow(dpy), 0, 0, 1, 1, 0, 0, 0);
+
+	/* fork into the background, exit parent process */
+	pid_t pid;
+
+	pid = fork();
+	/* exit the parent process */
+	if (pid) {
+		exit(EXIT_SUCCESS);
+	}
+
+	/* Avoid making the current directory in use, in case it will need to be umounted */
+	chdir("/");
+
+	clock_gettime(CLOCK_MONOTONIC, &start);
+	clock_gettime(CLOCK_MONOTONIC, &now);
+
+	struct __async_waiting_data waiting_data;
+	waiting_data.waiting = &waiting;
+	waiting_data.dpy = dpy;
+	waiting_data.win = &win;
+	waiting_data.data = data;
+
+	pthread_t tid;
+	pthread_create(&tid, NULL, &wait_for_clipboard_request, &waiting_data);
+
+	while (waiting) {
+		if (diff(&start, &now) > *ms) {
+			pthread_cancel(tid);
+			waiting = 0;
+		}
+
+		clock_gettime(CLOCK_MONOTONIC, &now);
+	}
+
+	exit(EXIT_SUCCESS);
+}
+
+
+static int safeword_cp(sqlite3* handle, sqlite3_int64 credential_id, unsigned int ms,
+	const char* table, const char* field)
+{
+	int ret;
+	char *sql;
+
+	sql = calloc(256, sizeof(char));
+	if (!sql) {
+		ret = -ENOMEM;
+		goto fail;
+	}
+	sprintf(sql, "SELECT t.%s FROM %s AS t "
+		"INNER JOIN credentials AS c "
+		"ON (c.%sid = t.id) WHERE c.id = %d;", field, table, field, credential_id);
+	ret = sqlite3_exec(handle, sql, copy_credential_callback, &ms, 0);
+	free(sql);
+fail:
+	return ret;
+}
+
+int safeword_cp_username(sqlite3* handle, sqlite3_int64 credential_id, unsigned int ms)
+{
+	return safeword_cp(handle, credential_id, ms, "usernames", "username");
+}
+
+int safeword_cp_password(sqlite3* handle, sqlite3_int64 credential_id, unsigned int ms)
+{
+	return safeword_cp(handle, credential_id, ms, "passwords", "password");
 }
