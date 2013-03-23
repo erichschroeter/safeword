@@ -193,7 +193,7 @@ int copyCmd_execute(void)
 	}
 	sprintf(sql, "SELECT p.password FROM passwords AS p "
 		"INNER JOIN credentials AS c "
-		"ON (c.passwordid = p.id) WHERE c.passwordid = %d;", credential_id);
+		"ON (c.passwordid = p.id) WHERE c.id = %d;", credential_id);
 	ret = sqlite3_exec(handle, sql, copy_credential_callback, &seconds_, 0);
 	free(sql);
 
