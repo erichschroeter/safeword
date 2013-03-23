@@ -243,33 +243,27 @@ static void* wait_for_clipboard_request(void *waiting_data)
 	struct __async_waiting_data *data = (struct __async_waiting_data*) waiting_data;
 	Display *dpy = data->dpy;
 	Window win = *data->win;
-
-	XSelectInput(dpy, win, StructureNotifyMask);
-	XMapWindow(dpy, win);
 	XSelectionRequestEvent *req;
 	XEvent e, respond;
-	for(;;) {
-		XNextEvent(dpy, &e);
-		if (e.type == MapNotify) break;
-	}
-	XFlush(dpy);
 
+	XSelectInput(dpy, win, PropertyChangeMask);
 	XSelectInput(dpy, win, StructureNotifyMask+ExposureMask);
-	XSetSelectionOwner (dpy, XA_CLIPBOARD(dpy), win, CurrentTime);
+	XSetSelectionOwner(dpy, XA_CLIPBOARD(dpy), win, CurrentTime);
+
 	while (*data->waiting) {
-		XFlush (dpy);
-		XNextEvent (dpy, &e);
+		XFlush(dpy);
+		XNextEvent(dpy, &e);
 		if (e.type == SelectionRequest) {
 			req=&(e.xselectionrequest);
 			if (req->target == XA_STRING) {
-				XChangeProperty (dpy,
+				XChangeProperty(dpy,
 					req->requestor,
 					req->property,
 					XA_STRING,
 					8,
 					PropModeReplace,
 					(unsigned char*) data->data,
-					32);
+					strlen(data->data));
 				respond.xselection.property=req->property;
 			} else {
 				respond.xselection.property= None;
@@ -280,8 +274,8 @@ static void* wait_for_clipboard_request(void *waiting_data)
 			respond.xselection.selection=req->selection;
 			respond.xselection.target= req->target;
 			respond.xselection.time = req->time;
-			XSendEvent (dpy, req->requestor,0,0,&respond);
-			XFlush (dpy);
+			XSendEvent(dpy, req->requestor,0,0,&respond);
+			XFlush(dpy);
 		}
 	}
 }
@@ -309,18 +303,6 @@ static int copy_credential_callback(void* millis, int argc, char** argv, char** 
 	/* create a window to trap events */
 	win = XCreateSimpleWindow(dpy, DefaultRootWindow(dpy), 0, 0, 1, 1, 0, 0, 0);
 
-	/* fork into the background, exit parent process */
-	pid_t pid;
-
-	pid = fork();
-	/* exit the parent process */
-	if (pid) {
-		exit(EXIT_SUCCESS);
-	}
-
-	/* Avoid making the current directory in use, in case it will need to be umounted */
-	chdir("/");
-
 	clock_gettime(CLOCK_MONOTONIC, &start);
 	clock_gettime(CLOCK_MONOTONIC, &now);
 
@@ -342,9 +324,8 @@ static int copy_credential_callback(void* millis, int argc, char** argv, char** 
 		clock_gettime(CLOCK_MONOTONIC, &now);
 	}
 
-	exit(EXIT_SUCCESS);
+	return 0;
 }
-
 
 static int safeword_cp(sqlite3* handle, sqlite3_int64 credential_id, unsigned int ms,
 	const char* table, const char* field)
