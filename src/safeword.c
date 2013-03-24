@@ -159,6 +159,24 @@ fail:
 	return ret;
 }
 
+int safeword_credential_remove(sqlite3* handle, sqlite3_int64 credential_id)
+{
+	int ret;
+	char *sql;
+
+	sql = calloc(100, sizeof(char));
+	if (!sql) {
+		ret = -ENOMEM;
+		goto fail;
+	}
+	sprintf(sql, "DELETE FROM credentials WHERE id = '%d';", credential_id);
+	ret = sqlite3_exec(handle, sql, 0, 0, 0);
+	free(sql);
+
+fail:
+	return ret;
+}
+
 int safeword_tag_credential(sqlite3 *handle, sqlite3_int64 credential_id, const char *tag)
 {
 	int ret;
