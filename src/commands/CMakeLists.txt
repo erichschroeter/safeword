@@ -7,5 +7,6 @@ RemoveCommand.c
 ListCommand.c
 TagCommand.c
 CopyCommand.c
+InfoCommand.c
 )
 add_library(commands ${SRCS})

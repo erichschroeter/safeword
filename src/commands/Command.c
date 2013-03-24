@@ -6,6 +6,7 @@
 #include "ListCommand.h"
 #include "TagCommand.h"
 #include "CopyCommand.h"
+#include "InfoCommand.h"
 
 struct command command_table[] = {
 	{"init", initCmd_help, initCmd_parse, initCmd_execute},
@@ -15,6 +16,7 @@ struct command command_table[] = {
 	{"ls", listCmd_help, listCmd_parse, listCmd_execute},
 	{"tag", tagCmd_help, tagCmd_parse, tagCmd_execute},
 	{"cp", copyCmd_help, copyCmd_parse, copyCmd_execute},
+	{"info", infoCmd_help, infoCmd_parse, infoCmd_execute},
 };
 const size_t command_table_size = sizeof(command_table) / sizeof(command_table[0]);
 
