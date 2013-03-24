@@ -69,6 +69,68 @@ fail:
 	return ret;
 }
 
+static int credential_info_callback(void* not_used, int argc, char** argv, char** col_name)
+{
+	if (argc < 3)
+		return -1;
+
+	printf("DESCRIPTION:\t%s\n", argv[2]);
+	printf("USERNAME:\t%s\n", argv[0]);
+	printf("PASSWORD:\t%s\n", argv[1]);
+
+	return 0;
+}
+
+int safeword_credential_info(sqlite3 *handle, sqlite3_int64 credential_id)
+{
+	int ret;
+	char* sql;
+
+	sql = calloc(256, sizeof(char));
+	if (!sql) {
+		ret = -ENOMEM;
+		goto fail;
+	}
+	sprintf(sql, "SELECT u.username,p.password,c.description FROM credentials AS c "
+		"INNER JOIN usernames AS u ON (c.usernameid = u.id) "
+		"INNER JOIN passwords AS p ON (c.passwordid = p.id) "
+		"WHERE c.id = '%d';", credential_id);
+	ret = sqlite3_exec(handle, sql, credential_info_callback, 0, 0);
+	free(sql);
+fail:
+	return ret;
+}
+
+static int tag_info_callback(void* not_used, int argc, char** argv, char** col_name)
+{
+	if (argc < 1)
+		return -1;
+
+	printf("TAG:\t%s\n", argv[0]);
+
+	return 0;
+}
+
+int safeword_tag_info(sqlite3 *handle, const char *tag)
+{
+	int ret;
+	char* sql;
+
+	/* TODO print the wiki/markdown text for the specified tag */
+	/* TODO print the number of mapped credentials for the specified tag */
+	sql = calloc(256, sizeof(char));
+	if (!sql) {
+		ret = -ENOMEM;
+		goto fail;
+	}
+	sprintf(sql, "SELECT tag FROM tags "
+		"WHERE tag = '%s';", tag);
+	ret = sqlite3_exec(handle, sql, tag_info_callback, 0, 0);
+	free(sql);
+fail:
+	return ret;
+}
+
 static int id_callback(void* not_used, int argc, char** argv, char** col_name) { _id = atoi(argv[0]); return 0; }
 
 static int map_to_credential(sqlite3* handle, const char* password, const char* table, const char* field,
