@@ -64,7 +64,7 @@ static int delete_tags(sqlite3* handle, const struct array *tags)
 
 	for (i = 0; i < tags->size; i++) {
 		if (force) {
-			safeword_delete_tag(handle, tags->data[i]);
+			safeword_tag_delete(handle, tags->data[i]);
 			continue;
 		}
 		printf("delete tag '%s'? (y/N) ", tags->data[i]);
@@ -81,7 +81,7 @@ static int delete_tags(sqlite3* handle, const struct array *tags)
 			continue;
 
 		if (!strncasecmp("yes", input_buffer, char_count)) {
-			safeword_delete_tag(handle, tags->data[i]);
+			safeword_tag_delete(handle, tags->data[i]);
 		} else if (!strncasecmp("quit", input_buffer, char_count) ||
 			!strncasecmp("q", input_buffer, char_count))
 			break;
@@ -232,7 +232,7 @@ int tagCmd_execute(void)
 			ret = -ENOMEM;
 			goto fail;
 		}
-		sprintf(sql, "SELECT tag FROM tags");
+		sprintf(sql, "SELECT tag FROM tags;");
 		ret = sqlite3_exec(handle, sql, print_tag_callback, 0, 0);
 		free(sql);
 	}

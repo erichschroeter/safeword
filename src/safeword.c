@@ -282,7 +282,7 @@ fail:
 	return ret;
 }
 
-int safeword_delete_tag(sqlite3* handle, const char *tag)
+int safeword_tag_delete(sqlite3* handle, const char *tag)
 {
 	int ret;
 	char *sql;
@@ -299,7 +299,7 @@ fail:
 	return ret;
 }
 
-int safeword_rename_tag(sqlite3* handle, const char *old, const char *new)
+int safeword_tag_rename(sqlite3* handle, const char *old, const char *new)
 {
 	int ret;
 	char *sql;
