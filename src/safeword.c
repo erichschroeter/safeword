@@ -12,7 +12,7 @@
 #include "safeword.h"
 #include "commands/Command.h"
 
-static sqlite3_int64 tag_id;
+static sqlite3_int64 _tag_id;
 static int _id;
 static int _copy_once = 0;
 
@@ -29,7 +29,7 @@ int safeword_config(const char* key, const char* value)
 
 static int tag_callback(void* not_used, int argc, char** argv, char** col_name)
 {
-	tag_id = atoi(argv[0]);
+	_tag_id = atoi(argv[0]);
 	return 0;
 }
 
@@ -244,7 +244,7 @@ int safeword_tag_credential(sqlite3 *handle, sqlite3_int64 credential_id, const 
 	int ret;
 	char *sql;
 
-	tag_id = -1; /* set to invalid value to represent it does not exist */
+	_tag_id = 0; /* set to invalid value to represent it does not exist */
 
 	sql = calloc(strlen(tag) + 100, sizeof(char));
 	if (!sql) {
@@ -255,7 +255,7 @@ int safeword_tag_credential(sqlite3 *handle, sqlite3_int64 credential_id, const 
 	ret = sqlite3_exec(handle, sql, tag_callback, 0, 0);
 	free(sql);
 
-	if (tag_id == -1) {
+	if (!_tag_id) {
 		sql = calloc(strlen(tag) + 100, sizeof(char));
 		if (!sql) {
 			ret = -ENOMEM;
@@ -264,7 +264,7 @@ int safeword_tag_credential(sqlite3 *handle, sqlite3_int64 credential_id, const 
 		sprintf(sql, "INSERT INTO tags (tag) VALUES ('%s');", tag);
 		ret = sqlite3_exec(handle, sql, 0, 0, 0);
 		free(sql);
-		tag_id = sqlite3_last_insert_rowid(handle);
+		_tag_id = sqlite3_last_insert_rowid(handle);
 	}
 
 	sql = calloc(strlen(tag) + 256, sizeof(char));
@@ -274,7 +274,7 @@ int safeword_tag_credential(sqlite3 *handle, sqlite3_int64 credential_id, const 
 	}
 	sprintf(sql, "INSERT OR REPLACE INTO tagged_credentials "
 		"(credentialid, tagid) VALUES (%d, %d);",
-		credential_id, tag_id);
+		credential_id, _tag_id);
 	ret = sqlite3_exec(handle, sql, 0, 0, 0);
 	free(sql);
 
