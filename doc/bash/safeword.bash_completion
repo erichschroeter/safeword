@@ -33,11 +33,14 @@ _safeword()
 		COMPREPLY=( $(compgen -W "${opts} ${tags}" -- ${cur}) )
 		;;
 	tag)
-		opts="--delete --force --move"
+		opts="--delete --force --move --wiki"
 		case "${prev}" in
 		tag)
 			local credentials=$( safeword ls --all | cut -d' ' -f1 )
 			COMPREPLY=( $(compgen -W "${credentials} ${opts}" -- ${cur}) )
+			;;
+		--wiki | -w)
+			COMPREPLY=( $(compgen -f -d  -W "-" -- ${cur}) )
 			;;
 		*)
 			local tags=$( safeword tag )

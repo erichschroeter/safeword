@@ -12,6 +12,7 @@
 #define EMULTIPLE_SUBCOMMANDS 257
 
 static int force;
+static FILE *_wiki_file;
 
 struct array {
 	unsigned int size;
@@ -23,6 +24,11 @@ struct tag_subcommand {
 };
 static struct tag_subcommand tag_subcommand_;
 
+struct update_info {
+	char *tag;
+	FILE *file;
+};
+
 static int *credential_ids;
 static int credential_ids_size;
 static struct array *tags_;
@@ -30,7 +36,7 @@ static struct array *tags_;
 char* tagCmd_help(void)
 {
 	return "SYNOPSIS\n"
-"	tag [-d | --delete] [-f | --force] [-m | --move] [ID] TAGS ...\n"
+"	tag [-d | --delete] [-f | --force] [-m | --move] [-w | --wiki] [ID] TAGS ...\n"
 "\n"
 "DESCRIPTION\n"
 "	This command maps tags to credentials within the safeword database.\n"
@@ -43,6 +49,9 @@ char* tagCmd_help(void)
 "	    Used with the --delete option to force a mapped tag to be removed.\n"
 "	-m, --move OLD NEW\n"
 "	    Move/rename an existing tag.\n"
+"	-w, --wiki FILE\n"
+"	    Specify markdown wiki information about the tag. If FILE is '-' then\n"
+"	    input is read from stdin.\n"
 "\n";
 }
 
@@ -106,21 +115,83 @@ static int rename_tag(sqlite3* handle, void *tags_array)
 		return -1;
 	}
 
-	return safeword_rename_tag(handle, tags->data[0], tags->data[1]);
+	return safeword_tag_rename(handle, tags->data[0], tags->data[1]);
+}
+
+static int update_tag(sqlite3* handle, void *update_info)
+{
+	int ret = 0;
+	struct update_info *info = (struct update_info*) update_info;
+	long wiki_size;
+	char *wiki;
+
+	if (!info || !info->tag) {
+		fprintf(stderr, "no tags specified\n");
+		return -1;
+	}
+
+	if (!info->file) {
+		fprintf(stderr, "no wiki file specified\n");
+		return -1;
+	}
+
+	if (info->file != stdin) {
+		if ((ret = fseek(info->file, 0, SEEK_END)) == -1) {
+			fprintf(stderr, "error seek end: %s\n", strerror(errno));
+			goto fail;
+		}
+		if ((wiki_size = ftell(info->file)) == -1) {
+			ret = errno;
+			fprintf(stderr, "ftell failed: %s\n", strerror(errno));
+			goto fail;
+		}
+		if ((ret = fseek(info->file, 0, SEEK_SET)) == -1) {
+			fprintf(stderr, "error seek set: %s\n", strerror(errno));
+			goto fail;
+		}
+		wiki = calloc(wiki_size + 1, sizeof(char));
+		if (!wiki) {
+			ret = -ENOMEM;
+			goto fail;
+		}
+		ret = fread(wiki, 1, wiki_size, info->file);
+	} else {
+		char c;
+		char buffer[1024];
+		wiki = calloc(1024, sizeof(char));
+		buffer[0] = '\0';
+		wiki_size = 0;
+		while (fgets(buffer, 1024, info->file)) {
+			char *old = wiki;
+			wiki_size += strlen(buffer);
+			wiki = realloc(wiki, wiki_size);
+			if (!wiki) {
+				ret = -ENOMEM;
+				goto fail;
+			}
+			strcat(wiki, buffer);
+		}
+	}
+
+	safeword_tag_update(handle, info->tag, wiki);
+
+fail:
+	return ret;
 }
 
 int tagCmd_parse(int argc, char** argv)
 {
 	int ret = 0, remaining_args = 0, i;
 	struct option long_options[] = {
-		{"delete",	no_argument,	NULL,	'd'},
-		{"force",	no_argument,	NULL,	'f'},
-		{"move",	no_argument,	NULL,	'm'},
+		{"delete", no_argument,       NULL, 'd'},
+		{"force",  no_argument,       NULL, 'f'},
+		{"move",   no_argument,       NULL, 'm'},
+		{"wiki",   required_argument, NULL, 'w'},
 	};
 
 	tag_subcommand_.execute = NULL;
 
-	while ((i = getopt_long(argc, argv, "dfm", long_options, 0)) != -1) {
+	while ((i = getopt_long(argc, argv, "w:dfm", long_options, 0)) != -1) {
 		switch (i) {
 		case 'd':
 			if (tag_subcommand_.execute) {
@@ -138,6 +209,18 @@ int tagCmd_parse(int argc, char** argv)
 				goto fail;
 			}
 			tag_subcommand_.execute = &rename_tag;
+			break;
+		case 'w':
+			if (!strncmp(optarg, "-", 1)) {
+				_wiki_file = stdin;
+			} else {
+				_wiki_file = fopen(optarg, "r");
+				if (!_wiki_file) {
+					ret = -EEXIST;
+					goto fail;
+				}
+			}
+			tag_subcommand_.execute = &update_tag;
 			break;
 		}
 	}
@@ -221,8 +304,14 @@ int tagCmd_execute(void)
 	if (ret)
 		goto fail;
 
-	if (tag_subcommand_.execute) {
+	if (tag_subcommand_.execute == &delete_tags ||
+		tag_subcommand_.execute == &rename_tag) {
 		tag_subcommand_.execute(handle, tags_);
+	} else if (tag_subcommand_.execute == &update_tag) {
+		struct update_info info;
+		info.tag = tags_->data[0];
+		info.file = _wiki_file;
+		tag_subcommand_.execute(handle, &info);
 	} else if (tags_ && credential_ids) {
 		for (i = 0; i < credential_ids_size; i++) {
 			for (j = 0; j < tags_->size; j++) {
