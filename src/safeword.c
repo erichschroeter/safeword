@@ -282,6 +282,44 @@ fail:
 	return ret;
 }
 
+int safeword_tag_update(sqlite3* handle, const char *tag, const char *wiki)
+{
+	int ret;
+	char *sql;
+
+	if (!tag) {
+		ret = -1;
+		goto fail;
+	}
+
+	sql = calloc(strlen(tag) + 100, sizeof(char));
+	if (!sql) {
+		ret = -ENOMEM;
+		goto fail;
+	}
+	sprintf(sql, "SELECT id FROM tags WHERE tag='%s';", tag);
+	ret = sqlite3_exec(handle, sql, tag_callback, 0, 0);
+	free(sql);
+
+	if (!_tag_id) {
+		ret = -EEXIST;
+		goto fail;
+	}
+
+	if (wiki) {
+		sql = calloc(strlen(wiki) + strlen(tag) + 100, sizeof(char));
+		if (!sql) {
+			ret = -ENOMEM;
+			goto fail;
+		}
+		sprintf(sql, "UPDATE OR ABORT tags SET wiki = '%s' WHERE tag = '%s';", wiki, tag);
+		ret = sqlite3_exec(handle, sql, 0, 0, 0);
+		free(sql);
+	}
+fail:
+	return ret;
+}
+
 int safeword_tag_delete(sqlite3* handle, const char *tag)
 {
 	int ret;

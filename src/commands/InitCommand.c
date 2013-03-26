@@ -93,6 +93,7 @@ int initCmd_execute(void)
 	query = "CREATE TABLE IF NOT EXISTS tags "
 		"(id INTEGER PRIMARY KEY, "
 		"tag TEXT NOT NULL, "
+		"wiki TEXT, "
 		"UNIQUE (tag) ON CONFLICT ABORT, "
 		"CONSTRAINT no_empty_tag CHECK (tag != '')"
 		");";

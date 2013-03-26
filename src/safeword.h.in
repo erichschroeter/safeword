@@ -23,6 +23,7 @@ int safeword_credential_remove(sqlite3* handle, sqlite3_int64 credential_id);
 int safeword_credential_info(sqlite3* handle, sqlite3_int64 credential_id);
 int safeword_tag_credential(sqlite3* handle, sqlite3_int64 credential_id, const char *tag);
 int safeword_tag_info(sqlite3* handle, const char *tag);
+int safeword_tag_update(sqlite3* handle, const char *tag, const char *wiki);
 int safeword_tag_delete(sqlite3* handle, const char *tag);
 int safeword_tag_rename(sqlite3* handle, const char *old, const char *new);
 int safeword_cp_username(sqlite3* handle, sqlite3_int64 credential_id, unsigned int ms);
