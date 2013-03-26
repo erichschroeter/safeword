@@ -19,7 +19,7 @@ struct array {
 };
 
 struct tag_subcommand {
-	int	(*execute)(sqlite3 *handle, const struct array *tags);
+	int	(*execute)(sqlite3 *handle, void *data);
 };
 static struct tag_subcommand tag_subcommand_;
 
@@ -52,10 +52,11 @@ static int print_tag_callback(void* not_used, int argc, char** argv, char** col_
 	return 0;
 }
 
-static int delete_tags(sqlite3* handle, const struct array *tags)
+static int delete_tags(sqlite3* handle, void *tags_array)
 {
 	int ret = 0, i, char_count;
 	char input, input_buffer[MAXBUFFERSIZE];
+	struct array *tags = (struct array*) tags_array;
 
 	if (!tags) {
 		fprintf(stderr, "no tags specified\n");
@@ -91,8 +92,10 @@ fail:
 	return ret;
 }
 
-static int rename_tag(sqlite3* handle, const struct array *tags)
+static int rename_tag(sqlite3* handle, void *tags_array)
 {
+	struct array *tags = (struct array*) tags_array;
+
 	if (!tags) {
 		fprintf(stderr, "no tags specified\n");
 		return -1;
