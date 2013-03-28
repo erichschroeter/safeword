@@ -92,17 +92,16 @@ fail:
 int addCmd_execute(void)
 {
 	int ret;
-	sqlite3* handle;
-	sqlite3_int64 credentials_rowid;
-	char* sql;
+	int credentials_id;
+	struct safeword_db db;
 
 	if (!username || !password)
 		return 0;
 
-	ret = safeword_db_open(&handle);
+	ret = safeword_db_open(&db, 0);
 	if (ret) goto fail;
 
-	ret = safeword_credential_add(handle, &credentials_rowid, username, password, description);
+	ret = safeword_credential_add(&db, &credentials_id, username, password, description);
 	if (ret) goto fail;
 
 	if (tags) {
@@ -110,12 +109,10 @@ int addCmd_execute(void)
 
 		tag = strtok(tags, ",");
 		while (tag != NULL) {
-			safeword_tag_credential(handle, credentials_rowid, tag);
+			safeword_tag_credential(&db, credentials_id, tag);
 			tag = strtok(NULL, ",");
 		}
 	}
-
-	sqlite3_close(handle);
 
 fail:
 	free(username);

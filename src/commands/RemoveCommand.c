@@ -36,16 +36,13 @@ fail:
 int removeCmd_execute(void)
 {
 	int ret;
-	sqlite3* handle;
-	char* sql;
+	struct safeword_db db;
 
-	ret = safeword_db_open(&handle);
+	ret = safeword_db_open(&db, 0);
 	if (ret) goto fail;
 
-	ret = safeword_credential_remove(handle, _credential_id);
+	ret = safeword_credential_remove(&db, _credential_id);
 	if (ret) goto fail;
-
-	sqlite3_close(handle);
 
 fail:
 	return ret;

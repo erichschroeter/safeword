@@ -15,18 +15,26 @@
 #define ESAFEWORD_ENV_NOT_SET	256
 #define ESAFEWORD_DB_NOEXIST	ENOENT
 
-int safeword_db_open(sqlite3 **handle);
+struct safeword_db {
+	char    *path;
+	sqlite3 *handle;
+};
+
+int safeword_open(struct safeword_db *db, const char *path);
+//int safeword_close(sqlite3 **db);
 int safeword_config(const char* key, const char* value);
-int safeword_credential_add(sqlite3* handle, sqlite3_int64 *credential_id,
+int safeword_credential_add(struct safeword_db *db, int *credential_id,
 	const char *username, const char *password, const char *description);
-int safeword_credential_remove(sqlite3* handle, sqlite3_int64 credential_id);
-int safeword_credential_info(sqlite3* handle, sqlite3_int64 credential_id);
-int safeword_tag_credential(sqlite3* handle, sqlite3_int64 credential_id, const char *tag);
-int safeword_tag_info(sqlite3* handle, const char *tag);
-int safeword_tag_update(sqlite3* handle, const char *tag, const char *wiki);
-int safeword_tag_delete(sqlite3* handle, const char *tag);
-int safeword_tag_rename(sqlite3* handle, const char *old, const char *new);
-int safeword_cp_username(sqlite3* handle, sqlite3_int64 credential_id, unsigned int ms);
-int safeword_cp_password(sqlite3* handle, sqlite3_int64 credential_id, unsigned int ms);
+int safeword_credential_remove(struct safeword_db *db, int credential_id);
+int safeword_credential_info(struct safeword_db *db, int credential_id);
+int safeword_tag_credential(struct safeword_db *db, int credential_id, const char *tag);
+int safeword_tag_info(struct safeword_db *db, const char *tag);
+int safeword_tag_update(struct safeword_db *db, const char *tag, const char *wiki);
+int safeword_tag_delete(struct safeword_db *db, const char *tag);
+int safeword_tag_rename(struct safeword_db *db, const char *old, const char *new);
+int safeword_cp_username(struct safeword_db *db, int credential_id, unsigned int ms);
+int safeword_cp_password(struct safeword_db *db, int credential_id, unsigned int ms);
+int safeword_list_tags(struct safeword_db *db, int credential_id, unsigned int *tags_size, const char ***tags);
+int safeword_list_credentials(struct safeword_db *db, unsigned int tags_size, char **tags);
 
 #endif // SAFEWORD_H

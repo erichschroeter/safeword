@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <pthread.h>
+#include <limits.h>
 
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
@@ -33,37 +34,130 @@ static int tag_callback(void* not_used, int argc, char** argv, char** col_name)
 	return 0;
 }
 
-int safeword_db_open(sqlite3 **handle)
+int safeword_db_open(struct safeword_db *db, const char *path)
 {
 	int ret = 0;
-	char *db = malloc(sizeof(char*));
 
-	if (!db) {
-		ret = -ENOMEM;
-		goto fail;
-	}
-	db = getenv("SAFEWORD_DB");
-	if (!db) {
-		ret = -ESAFEWORD_ENV_NOT_SET;
-		fprintf(stderr, "SAFEWORD_DB environment variable not set\n");
-		goto fail;
+	if (path) {
+		db->path = calloc(strlen(path) + 1, sizeof(char));
+		if (!(db->path)) {
+			ret = -ENOMEM;
+			goto fail;
+		}
+		strcpy(db->path, path);
+	} else {
+		char *env = getenv("SAFEWORD_DB");
+		if (!env) {
+			ret = -ESAFEWORD_ENV_NOT_SET;
+			fprintf(stderr, "SAFEWORD_DB environment variable not set\n");
+			goto fail;
+		}
+		db->path = calloc(strlen(env) + 1, sizeof(char));
+		if (!(db->path)) {
+			ret = -ENOMEM;
+			goto fail;
+		}
+		strcpy(db->path, env);
 	}
 
 	// fail if file does not exist, otherwise sqlite3 will create it
-	if (access(db, F_OK) == -1) {
+	if (access(db->path, F_OK) == -1) {
 		ret = -ESAFEWORD_DB_NOEXIST;
-		fprintf(stderr, "safeword database '%s' does not exist\n", db);
+		fprintf(stderr, "safeword database '%s' does not exist\n", db->path);
 		goto fail;
 	}
 
-	ret = sqlite3_open(db, handle);
+	ret = sqlite3_open(db->path, &(db->handle));
 	if (ret) {
-		fprintf(stderr, "failed to open safeword database '%s'\n", db);
+		fprintf(stderr, "failed to open safeword database '%s'\n", db->path);
 		goto fail;
 	}
 
 	/* enable foreign key support in Sqlite3 so delete cascading works. */
-	ret = sqlite3_exec(*handle, "PRAGMA foreign_keys = ON;", 0, 0, 0);
+	ret = sqlite3_exec(db->handle, "PRAGMA foreign_keys = ON;", 0, 0, 0);
+
+fail:
+	return ret;
+}
+
+static int credentials_callback(void* not_used, int argc, char** argv, char** col_name)
+{
+	char* description = argv[1];
+	int credential_id = atoi(argv[0]);
+
+	if (!description)
+		description = "";
+
+	printf("%ld : %s\n", credential_id, description);
+	return 0;
+}
+
+int safeword_list_credentials(struct safeword_db *db, unsigned int tags_size, char **tags)
+{
+	int ret = 0, i;
+	char *sql;
+
+	if (tags) {
+		char *tags_concat;
+		/* init to include the commas & null terminator */
+		int tags_concat_size = tags_size + 1;
+
+		for (i = 0; i < tags_size; i++) {
+			/* add 2 for wrapping in single quotes */
+			tags_concat_size += strlen(tags[i]) + 2;
+		}
+		tags_concat = calloc(tags_concat_size, sizeof(char));
+		if (!tags_concat) {
+			ret = -ENOMEM;
+			goto fail;
+		}
+		for (i = 0; i < tags_size; i++) {
+			strcat(tags_concat, "'");
+			strcat(tags_concat, tags[i]);
+			strcat(tags_concat, "'");
+			if (i != tags_size - 1)
+				strcat(tags_concat, ",");
+		}
+
+		sql = calloc(strlen(tags_concat) + 256, sizeof(char));
+		if (!sql) {
+			ret = -ENOMEM;
+			goto fail;
+		}
+		sprintf(sql, "SELECT c.id,c.description FROM credentials AS c "
+			"INNER JOIN tagged_credentials AS tc "
+			"INNER JOIN tags AS t ON "
+			"(c.id = tc.credentialid AND tc.tagid = t.id) WHERE "
+			"t.tag IN (%s) GROUP BY c.id HAVING COUNT(c.id) = %d;",
+			tags_concat, tags_size);
+		ret = sqlite3_exec(db->handle, sql, credentials_callback, 0, 0);
+		free(tags_concat);
+		free(sql);
+	} else {
+		if (tags_size == UINT_MAX) {
+			sql = calloc(100, sizeof(char));
+			if (!sql) {
+				ret = -ENOMEM;
+				goto fail;
+			}
+			sprintf(sql, "SELECT id,description FROM credentials;");
+			ret = sqlite3_exec(db->handle, sql, credentials_callback, 0, 0);
+			free(sql);
+		} else {
+			sql = calloc(256, sizeof(char));
+			if (!sql) {
+				ret = -ENOMEM;
+				goto fail;
+			}
+			sprintf(sql, "SELECT id,description FROM credentials "
+			"WHERE id NOT IN ("
+			"SELECT credentialid FROM tagged_credentials "
+			"WHERE tagid IN ("
+			"SELECT id FROM tags));");
+			ret = sqlite3_exec(db->handle, sql, credentials_callback, 0, 0);
+			free(sql);
+		}
+	}
 
 fail:
 	return ret;
@@ -81,7 +175,7 @@ static int credential_info_callback(void* not_used, int argc, char** argv, char*
 	return 0;
 }
 
-int safeword_credential_info(sqlite3 *handle, sqlite3_int64 credential_id)
+int safeword_credential_info(struct safeword_db *db, int credential_id)
 {
 	int ret;
 	char* sql;
@@ -95,7 +189,7 @@ int safeword_credential_info(sqlite3 *handle, sqlite3_int64 credential_id)
 		"INNER JOIN usernames AS u ON (c.usernameid = u.id) "
 		"INNER JOIN passwords AS p ON (c.passwordid = p.id) "
 		"WHERE c.id = '%d';", credential_id);
-	ret = sqlite3_exec(handle, sql, credential_info_callback, 0, 0);
+	ret = sqlite3_exec(db->handle, sql, credential_info_callback, 0, 0);
 	free(sql);
 fail:
 	return ret;
@@ -111,7 +205,7 @@ static int tag_info_callback(void* not_used, int argc, char** argv, char** col_n
 	return 0;
 }
 
-int safeword_tag_info(sqlite3 *handle, const char *tag)
+int safeword_tag_info(struct safeword_db *db, const char *tag)
 {
 	int ret;
 	char* sql;
@@ -125,7 +219,7 @@ int safeword_tag_info(sqlite3 *handle, const char *tag)
 	}
 	sprintf(sql, "SELECT tag FROM tags "
 		"WHERE tag = '%s';", tag);
-	ret = sqlite3_exec(handle, sql, tag_info_callback, 0, 0);
+	ret = sqlite3_exec(db->handle, sql, tag_info_callback, 0, 0);
 	free(sql);
 fail:
 	return ret;
@@ -190,7 +284,7 @@ int map_password(sqlite3* handle, const char* password, sqlite3_int64 credential
 	return 0;
 }
 
-int safeword_credential_add(sqlite3* handle, sqlite3_int64 *credential_id,
+int safeword_credential_add(struct safeword_db *db, int *credential_id,
 	const char *username, const char *password, const char *description)
 {
 	int ret = 0;
@@ -198,9 +292,9 @@ int safeword_credential_add(sqlite3* handle, sqlite3_int64 *credential_id,
 
 	sql = calloc(100, sizeof(char));
 	sprintf(sql, "INSERT INTO credentials DEFAULT VALUES;");
-	ret = sqlite3_exec(handle, sql, 0, 0, 0);
+	ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
 	free(sql);
-	*credential_id = sqlite3_last_insert_rowid(handle);
+	*credential_id = sqlite3_last_insert_rowid(db->handle);
 
 	if (description) {
 		sql = calloc(strlen(description) + 100, sizeof(char));
@@ -211,17 +305,17 @@ int safeword_credential_add(sqlite3* handle, sqlite3_int64 *credential_id,
 
 		sprintf(sql, "UPDATE credentials SET description = '%s' WHERE id = %d;",
 			description, *credential_id);
-		ret = sqlite3_exec(handle, sql, 0, 0, 0);
+		ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
 		free(sql);
 	}
 
-	map_username(handle, username, *credential_id);
-	map_password(handle, password, *credential_id);
+	map_username(db->handle, username, *credential_id);
+	map_password(db->handle, password, *credential_id);
 fail:
 	return ret;
 }
 
-int safeword_credential_remove(sqlite3* handle, sqlite3_int64 credential_id)
+int safeword_credential_remove(struct safeword_db *db, int credential_id)
 {
 	int ret;
 	char *sql;
@@ -232,14 +326,14 @@ int safeword_credential_remove(sqlite3* handle, sqlite3_int64 credential_id)
 		goto fail;
 	}
 	sprintf(sql, "DELETE FROM credentials WHERE id = '%d';", credential_id);
-	ret = sqlite3_exec(handle, sql, 0, 0, 0);
+	ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
 	free(sql);
 
 fail:
 	return ret;
 }
 
-int safeword_tag_credential(sqlite3 *handle, sqlite3_int64 credential_id, const char *tag)
+int safeword_tag_credential(struct safeword_db *db, int credential_id, const char *tag)
 {
 	int ret;
 	char *sql;
@@ -252,7 +346,7 @@ int safeword_tag_credential(sqlite3 *handle, sqlite3_int64 credential_id, const 
 		goto fail;
 	}
 	sprintf(sql, "SELECT id FROM tags WHERE tag='%s';", tag);
-	ret = sqlite3_exec(handle, sql, tag_callback, 0, 0);
+	ret = sqlite3_exec(db->handle, sql, tag_callback, 0, 0);
 	free(sql);
 
 	if (!_tag_id) {
@@ -262,9 +356,9 @@ int safeword_tag_credential(sqlite3 *handle, sqlite3_int64 credential_id, const 
 			goto fail;
 		}
 		sprintf(sql, "INSERT INTO tags (tag) VALUES ('%s');", tag);
-		ret = sqlite3_exec(handle, sql, 0, 0, 0);
+		ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
 		free(sql);
-		_tag_id = sqlite3_last_insert_rowid(handle);
+		_tag_id = sqlite3_last_insert_rowid(db->handle);
 	}
 
 	sql = calloc(strlen(tag) + 256, sizeof(char));
@@ -275,14 +369,14 @@ int safeword_tag_credential(sqlite3 *handle, sqlite3_int64 credential_id, const 
 	sprintf(sql, "INSERT OR REPLACE INTO tagged_credentials "
 		"(credentialid, tagid) VALUES (%d, %d);",
 		credential_id, _tag_id);
-	ret = sqlite3_exec(handle, sql, 0, 0, 0);
+	ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
 	free(sql);
 
 fail:
 	return ret;
 }
 
-int safeword_tag_update(sqlite3* handle, const char *tag, const char *wiki)
+int safeword_tag_update(struct safeword_db *db, const char *tag, const char *wiki)
 {
 	int ret;
 	char *sql;
@@ -298,7 +392,7 @@ int safeword_tag_update(sqlite3* handle, const char *tag, const char *wiki)
 		goto fail;
 	}
 	sprintf(sql, "SELECT id FROM tags WHERE tag='%s';", tag);
-	ret = sqlite3_exec(handle, sql, tag_callback, 0, 0);
+	ret = sqlite3_exec(db->handle, sql, tag_callback, 0, 0);
 	free(sql);
 
 	if (!_tag_id) {
@@ -313,14 +407,37 @@ int safeword_tag_update(sqlite3* handle, const char *tag, const char *wiki)
 			goto fail;
 		}
 		sprintf(sql, "UPDATE OR ABORT tags SET wiki = '%s' WHERE tag = '%s';", wiki, tag);
-		ret = sqlite3_exec(handle, sql, 0, 0, 0);
+		ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
 		free(sql);
 	}
 fail:
 	return ret;
 }
 
-int safeword_tag_delete(sqlite3* handle, const char *tag)
+static int print_tag_callback(void* not_used, int argc, char** argv, char** col_name)
+{
+	printf("%s\n", argv[0]);
+	return 0;
+}
+
+int safeword_list_tags(struct safeword_db *db, int credential_id, unsigned int *tags_size, const char ***tags)
+{
+	int ret = 0;
+	char *sql;
+
+	sql = calloc(100, sizeof(char));
+	if (!sql) {
+		ret = -ENOMEM;
+		goto fail;
+	}
+	sprintf(sql, "SELECT tag FROM tags;");
+	ret = sqlite3_exec(db->handle, sql, print_tag_callback, 0, 0);
+	free(sql);
+fail:
+	return ret;
+}
+
+int safeword_tag_delete(struct safeword_db *db, const char *tag)
 {
 	int ret;
 	char *sql;
@@ -331,13 +448,13 @@ int safeword_tag_delete(sqlite3* handle, const char *tag)
 		goto fail;
 	}
 	sprintf(sql, "DELETE FROM tags WHERE tag='%s';", tag);
-	ret = sqlite3_exec(handle, sql, 0, 0, 0);
+	ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
 	free(sql);
 fail:
 	return ret;
 }
 
-int safeword_tag_rename(sqlite3* handle, const char *old, const char *new)
+int safeword_tag_rename(struct safeword_db *db, const char *old, const char *new)
 {
 	int ret;
 	char *sql;
@@ -348,7 +465,7 @@ int safeword_tag_rename(sqlite3* handle, const char *old, const char *new)
 		goto fail;
 	}
 	sprintf(sql, "UPDATE tags SET tag = '%s' WHERE tag = '%s';", new, old);
-	ret = sqlite3_exec(handle, sql, 0, 0, 0);
+	ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
 	free(sql);
 fail:
 	return ret;
@@ -480,7 +597,7 @@ static int copy_credential_callback(void* millis, int argc, char** argv, char** 
 	return 0;
 }
 
-static int safeword_cp(sqlite3* handle, sqlite3_int64 credential_id, unsigned int ms,
+static int safeword_cp(struct safeword_db *db, int credential_id, unsigned int ms,
 	const char* table, const char* field)
 {
 	int ret;
@@ -494,18 +611,18 @@ static int safeword_cp(sqlite3* handle, sqlite3_int64 credential_id, unsigned in
 	sprintf(sql, "SELECT t.%s FROM %s AS t "
 		"INNER JOIN credentials AS c "
 		"ON (c.%sid = t.id) WHERE c.id = %d;", field, table, field, credential_id);
-	ret = sqlite3_exec(handle, sql, copy_credential_callback, &ms, 0);
+	ret = sqlite3_exec(db->handle, sql, copy_credential_callback, &ms, 0);
 	free(sql);
 fail:
 	return ret;
 }
 
-int safeword_cp_username(sqlite3* handle, sqlite3_int64 credential_id, unsigned int ms)
+int safeword_cp_username(struct safeword_db *db, int credential_id, unsigned int ms)
 {
-	return safeword_cp(handle, credential_id, ms, "usernames", "username");
+	return safeword_cp(db, credential_id, ms, "usernames", "username");
 }
 
-int safeword_cp_password(sqlite3* handle, sqlite3_int64 credential_id, unsigned int ms)
+int safeword_cp_password(struct safeword_db *db, int credential_id, unsigned int ms)
 {
-	return safeword_cp(handle, credential_id, ms, "passwords", "password");
+	return safeword_cp(db, credential_id, ms, "passwords", "password");
 }

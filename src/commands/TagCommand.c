@@ -3,7 +3,6 @@
 #include <string.h>
 #include <errno.h>
 #include <getopt.h>
-#include <sqlite3.h>
 
 #include <safeword.h>
 #include "TagCommand.h"
@@ -20,7 +19,7 @@ struct array {
 };
 
 struct tag_subcommand {
-	int	(*execute)(sqlite3 *handle, void *data);
+	int	(*execute)(struct safeword_db *db, void *data);
 };
 static struct tag_subcommand tag_subcommand_;
 
@@ -55,13 +54,7 @@ char* tagCmd_help(void)
 "\n";
 }
 
-static int print_tag_callback(void* not_used, int argc, char** argv, char** col_name)
-{
-	printf("%s\n", argv[0]);
-	return 0;
-}
-
-static int delete_tags(sqlite3* handle, void *tags_array)
+static int delete_tags(struct safeword_db* db, void *tags_array)
 {
 	int ret = 0, i, char_count;
 	char input, input_buffer[MAXBUFFERSIZE];
@@ -74,7 +67,7 @@ static int delete_tags(sqlite3* handle, void *tags_array)
 
 	for (i = 0; i < tags->size; i++) {
 		if (force) {
-			safeword_tag_delete(handle, tags->data[i]);
+			safeword_tag_delete(db, tags->data[i]);
 			continue;
 		}
 		printf("delete tag '%s'? (y/N) ", tags->data[i]);
@@ -91,7 +84,7 @@ static int delete_tags(sqlite3* handle, void *tags_array)
 			continue;
 
 		if (!strncasecmp("yes", input_buffer, char_count)) {
-			safeword_tag_delete(handle, tags->data[i]);
+			safeword_tag_delete(db, tags->data[i]);
 		} else if (!strncasecmp("quit", input_buffer, char_count) ||
 			!strncasecmp("q", input_buffer, char_count))
 			break;
@@ -101,7 +94,7 @@ fail:
 	return ret;
 }
 
-static int rename_tag(sqlite3* handle, void *tags_array)
+static int rename_tag(struct safeword_db* db, void *tags_array)
 {
 	struct array *tags = (struct array*) tags_array;
 
@@ -115,10 +108,10 @@ static int rename_tag(sqlite3* handle, void *tags_array)
 		return -1;
 	}
 
-	return safeword_tag_rename(handle, tags->data[0], tags->data[1]);
+	return safeword_tag_rename(db, tags->data[0], tags->data[1]);
 }
 
-static int update_tag(sqlite3* handle, void *update_info)
+static int update_tag(struct safeword_db* db, void *update_info)
 {
 	int ret = 0;
 	struct update_info *info = (struct update_info*) update_info;
@@ -173,7 +166,7 @@ static int update_tag(sqlite3* handle, void *update_info)
 		}
 	}
 
-	safeword_tag_update(handle, info->tag, wiki);
+	safeword_tag_update(db, info->tag, wiki);
 
 fail:
 	return ret;
@@ -297,39 +290,30 @@ fail:
 int tagCmd_execute(void)
 {
 	int ret = 0, i, j, char_count;
-	sqlite3 *handle;
+	struct safeword_db db;
 	char *sql, input, input_buffer[MAXBUFFERSIZE];
 
-	ret = safeword_db_open(&handle);
+	ret = safeword_db_open(&db, 0);
 	if (ret)
 		goto fail;
 
 	if (tag_subcommand_.execute == &delete_tags ||
 		tag_subcommand_.execute == &rename_tag) {
-		tag_subcommand_.execute(handle, tags_);
+		tag_subcommand_.execute(&db, tags_);
 	} else if (tag_subcommand_.execute == &update_tag) {
 		struct update_info info;
 		info.tag = tags_->data[0];
 		info.file = _wiki_file;
-		tag_subcommand_.execute(handle, &info);
+		tag_subcommand_.execute(&db, &info);
 	} else if (tags_ && credential_ids) {
 		for (i = 0; i < credential_ids_size; i++) {
 			for (j = 0; j < tags_->size; j++) {
-				safeword_tag_credential(handle, credential_ids[i], tags_->data[j]);
+				safeword_tag_credential(&db, credential_ids[i], tags_->data[j]);
 			}
 		}
 	} else {
-		sql = calloc(100, sizeof(char));
-		if (!sql) {
-			ret = -ENOMEM;
-			goto fail;
-		}
-		sprintf(sql, "SELECT tag FROM tags;");
-		ret = sqlite3_exec(handle, sql, print_tag_callback, 0, 0);
-		free(sql);
+		safeword_list_tags(&db, 0, 0, 0);
 	}
-
-	sqlite3_close(handle);
 
 fail:
 	for (i = 0; i < tags_->size; i++)

@@ -8,7 +8,7 @@
 #include "CopyCommand.h"
 
 static unsigned int _seconds = 10;
-static sqlite3_int64 _credential_id;
+static int _credential_id;
 #define COPYABLE_FIELDS	2
 enum field {
 	PASSWORD = 1,
@@ -72,9 +72,9 @@ fail:
 int copyCmd_execute(void)
 {
 	int ret = 0, i = 0;
-	sqlite3 *handle;
+	struct safeword_db db;
 
-	ret = safeword_db_open(&handle);
+	ret = safeword_db_open(&db, 0);
 	if (ret)
 		goto fail;
 
@@ -89,20 +89,18 @@ int copyCmd_execute(void)
 		do {
 			switch (_copy[i]) {
 			case USERNAME:
-				safeword_cp_username(handle, _credential_id, _seconds * 1000);
+				safeword_cp_username(&db, _credential_id, _seconds * 1000);
 				break;
 			case PASSWORD:
 			defaul:
-				safeword_cp_password(handle, _credential_id, _seconds * 1000);
+				safeword_cp_password(&db, _credential_id, _seconds * 1000);
 				break;
 			};
 			i++;
 		} while (i < COPYABLE_FIELDS && _copy[i] != 0);
 	} else {
-		safeword_cp_password(handle, _credential_id, _seconds * 1000);
+		safeword_cp_password(&db, _credential_id, _seconds * 1000);
 	}
-
-	sqlite3_close(handle);
 
 fail:
 	return ret;

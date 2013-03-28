@@ -3,7 +3,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <string.h>
-#include <sqlite3.h>
+#include <limits.h>
 
 #include <safeword.h>
 #include "ListCommand.h"
@@ -82,76 +82,21 @@ static int credentials_callback(void* not_used, int argc, char** argv, char** co
 int listCmd_execute(void)
 {
 	int ret = 0, i;
-	sqlite3 *handle;
-	char *sql;
+	struct safeword_db db;
 
-	ret = safeword_db_open(&handle);
+	ret = safeword_db_open(&db, 0);
 	if (ret)
 		goto fail;
 
-	if (tags) {
-		char *tags_concat;
-		/* init to include the commas & null terminator */
-		int tags_concat_size = tags_size + 1;
-
-		for (i = 0; i < tags_size; i++) {
-			/* add 2 for wrapping in single quotes */
-			tags_concat_size += strlen(tags[i]) + 2;
-		}
-		tags_concat = calloc(tags_concat_size, sizeof(char));
-		if (!tags_concat) {
-			ret = -ENOMEM;
-			goto fail;
-		}
-		for (i = 0; i < tags_size; i++) {
-			strcat(tags_concat, "'");
-			strcat(tags_concat, tags[i]);
-			strcat(tags_concat, "'");
-			if (i != tags_size - 1)
-				strcat(tags_concat, ",");
-		}
-
-		sql = calloc(strlen(tags_concat) + 256, sizeof(char));
-		if (!sql) {
-			ret = -ENOMEM;
-			goto fail;
-		}
-		sprintf(sql, "SELECT c.id,c.description FROM credentials AS c "
-			"INNER JOIN tagged_credentials AS tc "
-			"INNER JOIN tags AS t ON "
-			"(c.id = tc.credentialid AND tc.tagid = t.id) WHERE "
-			"t.tag IN (%s) GROUP BY c.id HAVING COUNT(c.id) = %d;",
-			tags_concat, tags_size);
-		ret = sqlite3_exec(handle, sql, credentials_callback, 0, 0);
-		free(tags_concat);
-		free(sql);
+	if (tags && !printAll) {
+		safeword_list_credentials(&db, tags_size, tags);
 	} else {
 		if (printAll) {
-			sql = calloc(100, sizeof(char));
-			if (!sql) {
-				ret = -ENOMEM;
-				goto fail;
-			}
-			sprintf(sql, "SELECT id,description FROM credentials;");
-			ret = sqlite3_exec(handle, sql, credentials_callback, 0, 0);
-			free(sql);
+			safeword_list_credentials(&db, UINT_MAX, 0);
 		} else {
-			sql = calloc(256, sizeof(char));
-			if (!sql) {
-				ret = -ENOMEM;
-				goto fail;
-			}
-			sprintf(sql, "SELECT id,description FROM credentials "
-			"WHERE id NOT IN ("
-			"SELECT credentialid FROM tagged_credentials "
-			"WHERE tagid IN ("
-			"SELECT id FROM tags));");
-			ret = sqlite3_exec(handle, sql, credentials_callback, 0, 0);
-			free(sql);
+			safeword_list_credentials(&db, 0, 0);
 		}
 	}
-
-	sqlite3_close(handle);
 
 fail:
 	for (i = 0; i < tags_size; i++)
