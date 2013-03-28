@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8.5)
 project(safeword)
+add_definitions(-DDEBUG)
 
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 1)
