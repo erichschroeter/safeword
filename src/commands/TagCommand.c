@@ -5,12 +5,12 @@
 #include <getopt.h>
 
 #include <safeword.h>
+#include <safeword_errno.h>
 #include "TagCommand.h"
 
 #define MAXBUFFERSIZE 16
-#define EMULTIPLE_SUBCOMMANDS 257
 
-static int force;
+static int _force = 0;
 static FILE *_wiki_file;
 
 struct array {
@@ -21,16 +21,16 @@ struct array {
 struct tag_subcommand {
 	int	(*execute)(struct safeword_db *db, void *data);
 };
-static struct tag_subcommand tag_subcommand_;
+static struct tag_subcommand _subcommand;
 
 struct update_info {
 	char *tag;
 	FILE *file;
 };
 
-static int *credential_ids;
-static int credential_ids_size;
-static struct array *tags_;
+static int *_credential_ids;
+static int _credential_ids_size;
+static struct array *_tags;
 
 char* tagCmd_help(void)
 {
@@ -56,17 +56,17 @@ char* tagCmd_help(void)
 
 static int delete_tags(struct safeword_db* db, void *tags_array)
 {
-	int ret = 0, i, char_count;
+	int i, char_count;
 	char input, input_buffer[MAXBUFFERSIZE];
 	struct array *tags = (struct array*) tags_array;
 
 	if (!tags) {
 		fprintf(stderr, "no tags specified\n");
-		return -1;
+		return -ESAFEWORD_INVARG;
 	}
 
 	for (i = 0; i < tags->size; i++) {
-		if (force) {
+		if (_force) {
 			safeword_tag_delete(db, tags->data[i]);
 			continue;
 		}
@@ -90,8 +90,7 @@ static int delete_tags(struct safeword_db* db, void *tags_array)
 			break;
 	}
 
-fail:
-	return ret;
+	return 0;
 }
 
 static int rename_tag(struct safeword_db* db, void *tags_array)
@@ -100,12 +99,12 @@ static int rename_tag(struct safeword_db* db, void *tags_array)
 
 	if (!tags) {
 		fprintf(stderr, "no tags specified\n");
-		return -1;
+		return -ESAFEWORD_INVARG;
 	}
 
 	if (tags->size < 2) {
 		fprintf(stderr, "%s\n", tags->size ? "no new tag name specified" : "no tags specified");
-		return -1;
+		return -ESAFEWORD_INVARG;
 	}
 
 	return safeword_tag_rename(db, tags->data[0], tags->data[1]);
@@ -120,46 +119,45 @@ static int update_tag(struct safeword_db* db, void *update_info)
 
 	if (!info || !info->tag) {
 		fprintf(stderr, "no tags specified\n");
-		return -1;
+		return -ESAFEWORD_INVARG;
 	}
 
 	if (!info->file) {
 		fprintf(stderr, "no wiki file specified\n");
-		return -1;
+		return -ESAFEWORD_INVARG;
 	}
 
 	if (info->file != stdin) {
-		if ((ret = fseek(info->file, 0, SEEK_END)) == -1) {
-			fprintf(stderr, "error seek end: %s\n", strerror(errno));
-			goto fail;
-		}
-		if ((wiki_size = ftell(info->file)) == -1) {
-			ret = errno;
-			fprintf(stderr, "ftell failed: %s\n", strerror(errno));
-			goto fail;
-		}
-		if ((ret = fseek(info->file, 0, SEEK_SET)) == -1) {
-			fprintf(stderr, "error seek set: %s\n", strerror(errno));
-			goto fail;
-		}
+		ret = fseek(info->file, 0, SEEK_END);
+		safeword_check(ret != -1, -ESAFEWORD_IO, fail);
+
+		wiki_size = ftell(info->file);
+		safeword_check(wiki_size != -1, -ESAFEWORD_IO, fail);
+
+		ret = fseek(info->file, 0, SEEK_SET);
+		safeword_check(ret != -1, -ESAFEWORD_IO, fail);
+
 		wiki = calloc(wiki_size + 1, sizeof(char));
-		if (!wiki) {
-			ret = -ENOMEM;
-			goto fail;
-		}
+		safeword_check(wiki, -ENOMEM, fail);
+
 		ret = fread(wiki, 1, wiki_size, info->file);
+		safeword_check(ret == wiki_size, -ESAFEWORD_IO, fail);
 	} else {
 		char c;
 		char buffer[1024];
-		wiki = calloc(1024, sizeof(char));
 		buffer[0] = '\0';
 		wiki_size = 0;
+
+		wiki = calloc(1024, sizeof(char));
+		safeword_check(wiki, -ENOMEM, fail);
+
 		while (fgets(buffer, 1024, info->file)) {
 			char *old = wiki;
 			wiki_size += strlen(buffer);
-			wiki = realloc(wiki, wiki_size);
+			wiki = realloc(wiki, wiki_size + 1);
 			if (!wiki) {
 				ret = -ENOMEM;
+				free(old);
 				goto fail;
 			}
 			strcat(wiki, buffer);
@@ -169,6 +167,7 @@ static int update_tag(struct safeword_db* db, void *update_info)
 	safeword_tag_update(db, info->tag, wiki);
 
 fail:
+	free(wiki);
 	return ret;
 }
 
@@ -182,38 +181,29 @@ int tagCmd_parse(int argc, char** argv)
 		{"wiki",   required_argument, NULL, 'w'},
 	};
 
-	tag_subcommand_.execute = NULL;
+	_subcommand.execute = NULL;
 
 	while ((i = getopt_long(argc, argv, "w:dfm", long_options, 0)) != -1) {
 		switch (i) {
 		case 'd':
-			if (tag_subcommand_.execute) {
-				ret = -EMULTIPLE_SUBCOMMANDS;
-				goto fail;
-			}
-			tag_subcommand_.execute = &delete_tags;
+			safeword_check(!_subcommand.execute, -ESAFEWORD_STATE, fail);
+			_subcommand.execute = &delete_tags;
 			break;
 		case 'f':
-			force = 1;
+			_force = 1;
 			break;
 		case 'm':
-			if (tag_subcommand_.execute) {
-				ret = -EMULTIPLE_SUBCOMMANDS;
-				goto fail;
-			}
-			tag_subcommand_.execute = &rename_tag;
+			safeword_check(!_subcommand.execute, -ESAFEWORD_STATE, fail);
+			_subcommand.execute = &rename_tag;
 			break;
 		case 'w':
 			if (!strncmp(optarg, "-", 1)) {
 				_wiki_file = stdin;
 			} else {
 				_wiki_file = fopen(optarg, "r");
-				if (!_wiki_file) {
-					ret = -EEXIST;
-					goto fail;
-				}
+				safeword_check(_wiki_file, -ESAFEWORD_IO, fail);
 			}
-			tag_subcommand_.execute = &update_tag;
+			_subcommand.execute = &update_tag;
 			break;
 		}
 	}
@@ -221,35 +211,33 @@ int tagCmd_parse(int argc, char** argv)
 	remaining_args = argc - optind;
 
 	/* START of parsing credential ids */
-	if (!tag_subcommand_.execute && remaining_args > 0) {
-		int i = 0, id;
-		char *id_str;
-		char *ids_backup = calloc(strlen(argv[optind]), sizeof(char));
-		int tags_size = 0;
-		char **tags = malloc(remaining_args * sizeof(*tags));
-		if (!tags) {
-			ret = -ENOMEM;
-			goto fail;
-		}
+	if (!_subcommand.execute && remaining_args > 0) {
+		int i = 0, id, tags_size = 0;
+		char *id_str, *ids_backup, **tags;
+
+		ids_backup = calloc(strlen(argv[optind]) + 1, sizeof(char));
+		safeword_check(ids_backup, -ENOMEM, fail);
+
+		tags = malloc(remaining_args * sizeof(*tags));
+		safeword_check(tags, -ENOMEM, fail);
+
 		strcpy(ids_backup, argv[optind]);
 
 		/* get number of credential ids in string */
 		id_str = strtok(ids_backup, ",");
 		while (id_str != NULL) {
 			id_str = strtok(NULL, ",");
-			credential_ids_size++;
+			_credential_ids_size++;
 		}
 
-		credential_ids = calloc(credential_ids_size, sizeof(*credential_ids));
-		if (!credential_ids) {
-			ret = -ENOMEM;
-			goto fail;
-		}
+		_credential_ids = calloc(_credential_ids_size, sizeof(*_credential_ids));
+		safeword_check(_credential_ids, -ENOMEM, fail);
+
 		ids_backup = argv[optind];
 		id_str = strtok(ids_backup, ",");
 		while (id_str != NULL) {
 			id = atoi(id_str);
-			credential_ids[i] = id;
+			_credential_ids[i] = id;
 			id_str = strtok(NULL, ",");
 			i++;
 		}
@@ -259,26 +247,20 @@ int tagCmd_parse(int argc, char** argv)
 	/* END of parsing credential ids */
 
 	/* START of parsing tags */
-	tags_ = malloc(sizeof(*tags_));
-	if (!tags_) {
-		ret = -ENOMEM;
-		goto fail;
-	}
-	tags_->size = 0;
-	tags_->data = malloc(remaining_args * sizeof(*tags_->data));
-	if (!tags_->data) {
-		ret = -ENOMEM;
-		goto fail;
-	}
+	_tags = malloc(sizeof(*_tags));
+	safeword_check(_tags, -ENOMEM, fail);
+
+	_tags->size = 0;
+	_tags->data = malloc(remaining_args * sizeof(*_tags->data));
+	safeword_check(_tags->data, -ENOMEM, fail);
+
 	/* copy tags to the tags array */
 	for (i = 0; i < remaining_args; i++) {
-		tags_->data[i] = calloc(strlen(argv[optind]), sizeof(char));
-		if (!tags_->data[i]) {
-			ret = -ENOMEM;
-			goto fail;
-		}
-		strcpy(tags_->data[i], argv[optind]);
-		tags_->size++;
+		_tags->data[i] = calloc(strlen(argv[optind]) + 1, sizeof(char));
+		safeword_check(_tags->data[i], -ENOMEM, fail);
+
+		strcpy(_tags->data[i], argv[optind]);
+		_tags->size++;
 		optind++;
 	}
 	/* END of parsing tags */
@@ -289,26 +271,29 @@ fail:
 
 int tagCmd_execute(void)
 {
-	int ret = 0, i, j, char_count;
+	int ret = 0, i, j;
 	struct safeword_db db;
-	char *sql, input, input_buffer[MAXBUFFERSIZE];
+	char *sql;
 
 	ret = safeword_db_open(&db, 0);
-	if (ret)
-		goto fail;
+	safeword_check(!ret, ret, fail);
 
-	if (tag_subcommand_.execute == &delete_tags ||
-		tag_subcommand_.execute == &rename_tag) {
-		tag_subcommand_.execute(&db, tags_);
-	} else if (tag_subcommand_.execute == &update_tag) {
+	if (_subcommand.execute == &delete_tags ||
+		_subcommand.execute == &rename_tag) {
+		_subcommand.execute(&db, _tags);
+	} else if (_subcommand.execute == &update_tag) {
 		struct update_info info;
-		info.tag = tags_->data[0];
+		info.tag = _tags->data[0];
 		info.file = _wiki_file;
-		tag_subcommand_.execute(&db, &info);
-	} else if (tags_ && credential_ids) {
-		for (i = 0; i < credential_ids_size; i++) {
-			for (j = 0; j < tags_->size; j++) {
-				safeword_tag_credential(&db, credential_ids[i], tags_->data[j]);
+		_subcommand.execute(&db, &info);
+	} else if (_tags && _credential_ids) {
+		if (_tags->size < 1) {
+			safeword_list_tags(&db, _credential_ids[0], 0, 0);
+		} else {
+			for (i = 0; i < _credential_ids_size; i++) {
+				for (j = 0; j < _tags->size; j++) {
+					safeword_tag_credential(&db, _credential_ids[i], _tags->data[j]);
+				}
 			}
 		}
 	} else {
@@ -316,8 +301,8 @@ int tagCmd_execute(void)
 	}
 
 fail:
-	for (i = 0; i < tags_->size; i++)
-		free(tags_->data[i]);
-	free(tags_);
+	for (i = 0; i < _tags->size; i++)
+		free(_tags->data[i]);
+	free(_tags);
 	return ret;
 }

@@ -14,6 +14,7 @@ configure_file(
 
 # add the binary tree to the search path for include files for safeword.h
 include_directories("${PROJECT_BINARY_DIR}/src")
+include_directories("${PROJECT_SOURCE_DIR}/src")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 set(PROJECT_LIB_PATH "${CMAKE_SOURCE_DIR}/lib")
