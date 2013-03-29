@@ -84,11 +84,17 @@ int main(int argc, char** argv)
 			case 0:
 				res = command_table[command_index].execute();
 				switch (res) {
-				case -ESAFEWORD_DB_NOEXIST:
+				case 0:
+					break;
+				case -ESAFEWORD_DBEXIST:
 					fprintf(stderr, "database does not exist. See 'safeword help init'\n");
 					break;
+				default:
+					fprintf(stderr, "safeword execute error: '%s'\n", safeword_strerror(res));
 				}
 				break;
+			default:
+				fprintf(stderr, "safeword parsing error: '%s'\n", safeword_strerror(res));
 			}
 		} else if (matches) {
 			print_possible_commands(command_str);
