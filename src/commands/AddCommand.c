@@ -3,18 +3,14 @@
 #include <string.h>
 #include <errno.h>
 #include <getopt.h>
-#include <sqlite3.h>
 
 #include <safeword.h>
 #include "AddCommand.h"
 
-static char* username = NULL;
-static char* password = NULL;
-static char* description = NULL;
-static char* tags = NULL;
-
-static int username_id;
-static int password_id;
+static char* _username = NULL;
+static char* _password = NULL;
+static char* _description = NULL;
+static char* _tags = NULL;
 
 char* addCmd_help(void)
 {
@@ -38,53 +34,45 @@ int addCmd_parse(int argc, char** argv)
 {
 	int ret = 0, c;
 	struct option long_options[] = {
-		{"message",	required_argument,	NULL,	'm'},
-		{"tag",	required_argument,	NULL,	't'},
+		{"message", required_argument, NULL, 'm'},
+		{"tag",     required_argument, NULL, 't'},
 	};
 
 	while ((c = getopt_long(argc, argv, "m:t:", long_options, 0)) != -1) {
 		switch (c) {
 		case 'm':
-			description = calloc(strlen(optarg), sizeof(char));
-			if (!description) {
-				ret = -ENOMEM;
-				goto fail;
-			}
-			description = strcpy(description, optarg);
+			_description = calloc(strlen(optarg) + 1, sizeof(char));
+			safeword_check(_description, -ENOMEM, fail_options);
+			_description = strcpy(_description, optarg);
 			break;
 		case 't':
-			tags = calloc(strlen(optarg), sizeof(char));
-			if (!tags) {
-				ret = -ENOMEM;
-				goto fail;
-			}
-			strcpy(tags, optarg);
+			_tags = calloc(strlen(optarg) + 1, sizeof(char));
+			safeword_check(_tags, -ENOMEM, fail_options);
+			strcpy(_tags, optarg);
 			break;
 		}
 	}
 
-	if ((argc - optind) < 2)
-		return ret;
+	/* not enough args */
+	safeword_check(((argc - optind) > 1), -ESAFEWORD_INVARG, fail_options);
 
-	username = calloc(strlen(argv[optind]), sizeof(char));
-	if (!username) {
-		ret = -ENOMEM;
-		goto fail;
-	}
-	username = strcpy(username, argv[optind]);
+	_username = calloc(strlen(argv[optind]) + 1, sizeof(char));
+	safeword_check(_username, -ENOMEM, fail_username);
+	_username = strcpy(_username, argv[optind]);
 	optind++;
 
-	password = calloc(strlen(argv[optind]), sizeof(char));
-	if (!password) {
-		ret = -ENOMEM;
-		goto fail_password;
-	}
-	password = strcpy(password, argv[optind]);
+	_password = calloc(strlen(argv[optind]) + 1, sizeof(char));
+	safeword_check(_password, -ENOMEM, fail_password);
+	_password = strcpy(_password, argv[optind]);
 
 	return ret;
 
 fail_password:
-	free(username);
+	free(_username);
+fail_username:
+fail_options:
+	free(_tags);
+	free(_description);
 fail:
 	return ret;
 }
@@ -92,32 +80,40 @@ fail:
 int addCmd_execute(void)
 {
 	int ret;
-	int credentials_id;
+	int credential_id;
 	struct safeword_db db;
 
-	if (!username || !password)
-		return 0;
+	if (!_username) {
+		fprintf(stderr, "no username specified\n");
+		ret = -ESAFEWORD_INVARG;
+		goto fail;
+	}
+	if (!_password) {
+		fprintf(stderr, "no password specified\n");
+		ret = -ESAFEWORD_INVARG;
+		goto fail;
+	}
 
 	ret = safeword_db_open(&db, 0);
-	if (ret) goto fail;
+	safeword_check(!ret, ret, fail);
 
-	ret = safeword_credential_add(&db, &credentials_id, username, password, description);
-	if (ret) goto fail;
+	ret = safeword_credential_add(&db, &credential_id, _username, _password, _description);
+	safeword_check(!ret, ret, fail);
 
-	if (tags) {
+	if (_tags) {
 		char *tag;
 
-		tag = strtok(tags, ",");
+		tag = strtok(_tags, ",");
 		while (tag != NULL) {
-			safeword_tag_credential(&db, credentials_id, tag);
+			safeword_tag_credential(&db, credential_id, tag);
 			tag = strtok(NULL, ",");
 		}
 	}
 
 fail:
-	free(username);
-	free(password);
-	free(description);
-	free(tags);
+	free(_username);
+	free(_password);
+	free(_description);
+	free(_tags);
 	return ret;
 }
