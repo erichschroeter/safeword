@@ -12,8 +12,12 @@
 #include <errno.h>
 #include <sqlite3.h>
 
-#define ESAFEWORD_ENV_NOT_SET	256
-#define ESAFEWORD_DB_NOEXIST	ENOENT
+#define safeword_check(T, ERR, GOTO) if (!(T)) { ret = ERR; goto GOTO; }
+
+#define ESAFEWORD_DBEXIST       ENOENT /* safeword db does not exist */
+#define ESAFEWORD_INVARG        256    /* invalid argument */
+
+char* safeword_strerror(int errnum);
 
 struct safeword_db {
 	char    *path;

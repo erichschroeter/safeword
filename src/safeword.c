@@ -17,6 +17,22 @@ static sqlite3_int64 _tag_id;
 static int _id;
 static int _copy_once = 0;
 
+char* safeword_strerror(int errnum)
+{
+	switch (errnum) {
+	case ESAFEWORD_DBEXIST:
+	case -ESAFEWORD_DBEXIST:
+		return "safeword db does not exist";
+	case ESAFEWORD_INVARG:
+	case -ESAFEWORD_INVARG:
+		return "invalid argument";
+	case ENOMEM:
+		return "no memory";
+	default:
+		return "unknown safeword errno";
+	}
+}
+
 int safeword_config(const char* key, const char* value)
 {
 	if (!strcmp(key, "copy_once")) {
@@ -48,7 +64,7 @@ int safeword_db_open(struct safeword_db *db, const char *path)
 	} else {
 		char *env = getenv("SAFEWORD_DB");
 		if (!env) {
-			ret = -ESAFEWORD_ENV_NOT_SET;
+			ret = -ESAFEWORD_DBEXIST;
 			fprintf(stderr, "SAFEWORD_DB environment variable not set\n");
 			goto fail;
 		}
@@ -62,7 +78,7 @@ int safeword_db_open(struct safeword_db *db, const char *path)
 
 	// fail if file does not exist, otherwise sqlite3 will create it
 	if (access(db->path, F_OK) == -1) {
-		ret = -ESAFEWORD_DB_NOEXIST;
+		ret = -ESAFEWORD_DBEXIST;
 		fprintf(stderr, "safeword database '%s' does not exist\n", db->path);
 		goto fail;
 	}
