@@ -19,6 +19,7 @@ static int _copy_once = 0;
 
 char* safeword_strerror(int errnum)
 {
+	static char text[32];
 	switch (errnum) {
 	case ESAFEWORD_DBEXIST:
 	case -ESAFEWORD_DBEXIST:
@@ -26,10 +27,15 @@ char* safeword_strerror(int errnum)
 	case ESAFEWORD_INVARG:
 	case -ESAFEWORD_INVARG:
 		return "invalid argument";
+	case ESAFEWORD_FIELDEXIST:
+	case -ESAFEWORD_FIELDEXIST:
+		return "field does not exist";
 	case ENOMEM:
+	case -ENOMEM:
 		return "no memory";
 	default:
-		return "unknown safeword errno";
+		sprintf(text, "unknown safeword errno (%d)", errnum);
+		return text;
 	}
 }
 
@@ -353,24 +359,22 @@ int safeword_tag_credential(struct safeword_db *db, int credential_id, const cha
 {
 	int ret;
 	char *sql;
-
 	_tag_id = 0; /* set to invalid value to represent it does not exist */
 
+	safeword_check(credential_id, -ESAFEWORD_INVARG, fail);
+	safeword_check(tag, -ESAFEWORD_INVARG, fail);
+
 	sql = calloc(strlen(tag) + 100, sizeof(char));
-	if (!sql) {
-		ret = -ENOMEM;
-		goto fail;
-	}
+	safeword_check(sql, -ENOMEM, fail);
+
 	sprintf(sql, "SELECT id FROM tags WHERE tag='%s';", tag);
 	ret = sqlite3_exec(db->handle, sql, tag_callback, 0, 0);
 	free(sql);
 
 	if (!_tag_id) {
 		sql = calloc(strlen(tag) + 100, sizeof(char));
-		if (!sql) {
-			ret = -ENOMEM;
-			goto fail;
-		}
+		safeword_check(sql, -ENOMEM, fail);
+
 		sprintf(sql, "INSERT INTO tags (tag) VALUES ('%s');", tag);
 		ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
 		free(sql);
@@ -378,10 +382,8 @@ int safeword_tag_credential(struct safeword_db *db, int credential_id, const cha
 	}
 
 	sql = calloc(strlen(tag) + 256, sizeof(char));
-	if (!sql) {
-		ret = -ENOMEM;
-		goto fail;
-	}
+	safeword_check(sql, -ENOMEM, fail);
+
 	sprintf(sql, "INSERT OR REPLACE INTO tagged_credentials "
 		"(credentialid, tagid) VALUES (%d, %d);",
 		credential_id, _tag_id);
@@ -397,31 +399,22 @@ int safeword_tag_update(struct safeword_db *db, const char *tag, const char *wik
 	int ret;
 	char *sql;
 
-	if (!tag) {
-		ret = -1;
-		goto fail;
-	}
+	safeword_check(tag, -ESAFEWORD_INVARG, fail);
 
 	sql = calloc(strlen(tag) + 100, sizeof(char));
-	if (!sql) {
-		ret = -ENOMEM;
-		goto fail;
-	}
+	safeword_check(sql, -ENOMEM, fail);
+
 	sprintf(sql, "SELECT id FROM tags WHERE tag='%s';", tag);
 	ret = sqlite3_exec(db->handle, sql, tag_callback, 0, 0);
 	free(sql);
 
-	if (!_tag_id) {
-		ret = -EEXIST;
-		goto fail;
-	}
+	/* make sure the tag exists */
+	safeword_check(_tag_id, -ESAFEWORD_FIELDEXIST, fail);
 
 	if (wiki) {
 		sql = calloc(strlen(wiki) + strlen(tag) + 100, sizeof(char));
-		if (!sql) {
-			ret = -ENOMEM;
-			goto fail;
-		}
+		safeword_check(sql, -ENOMEM, fail);
+
 		sprintf(sql, "UPDATE OR ABORT tags SET wiki = '%s' WHERE tag = '%s';", wiki, tag);
 		ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
 		free(sql);
@@ -441,13 +434,17 @@ int safeword_list_tags(struct safeword_db *db, int credential_id, unsigned int *
 	int ret = 0;
 	char *sql;
 
-	sql = calloc(100, sizeof(char));
-	if (!sql) {
-		ret = -ENOMEM;
-		goto fail;
+	sql = calloc(512, sizeof(char));
+	safeword_check(sql, -ENOMEM, fail);
+
+	if (!credential_id) {
+		sprintf(sql, "SELECT tag FROM tags;");
+	} else {
+		sprintf(sql, "SELECT t.tag FROM tags AS t INNER JOIN tagged_credentials AS c "
+			"ON (c.tagid = t.id) WHERE c.credentialid = %d;", credential_id);
 	}
-	sprintf(sql, "SELECT tag FROM tags;");
 	ret = sqlite3_exec(db->handle, sql, print_tag_callback, 0, 0);
+
 	free(sql);
 fail:
 	return ret;
@@ -458,11 +455,11 @@ int safeword_tag_delete(struct safeword_db *db, const char *tag)
 	int ret;
 	char *sql;
 
+	safeword_check(tag, -ESAFEWORD_INVARG, fail);
+
 	sql = calloc(strlen(tag) + 100, sizeof(char));
-	if (!sql) {
-		ret = -ENOMEM;
-		goto fail;
-	}
+	safeword_check(sql, -ENOMEM, fail);
+
 	sprintf(sql, "DELETE FROM tags WHERE tag='%s';", tag);
 	ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
 	free(sql);
@@ -475,11 +472,12 @@ int safeword_tag_rename(struct safeword_db *db, const char *old, const char *new
 	int ret;
 	char *sql;
 
+	safeword_check(old, -ESAFEWORD_INVARG, fail);
+	safeword_check(new, -ESAFEWORD_INVARG, fail);
+
 	sql = calloc(strlen(old) + strlen(new) + 100, sizeof(char));
-	if (!sql) {
-		ret = -ENOMEM;
-		goto fail;
-	}
+	safeword_check(sql, -ENOMEM, fail);
+
 	sprintf(sql, "UPDATE tags SET tag = '%s' WHERE tag = '%s';", new, old);
 	ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
 	free(sql);
