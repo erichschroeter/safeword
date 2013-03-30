@@ -26,6 +26,7 @@ struct safeword_db {
 	sqlite3 *handle;
 };
 
+int safeword_init(const char *path);
 int safeword_open(struct safeword_db *db, const char *path);
 int safeword_close(struct safeword_db *db);
 int safeword_config(const char* key, const char* value);

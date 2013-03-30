@@ -54,11 +54,71 @@ int safeword_config(const char* key, const char* value)
 	return 0;
 }
 
-static int tag_callback(void* not_used, int argc, char** argv, char** col_name)
+/* #region safeword init function */
+
+int safeword_init(const char *path)
 {
-	_tag_id = atoi(argv[0]);
-	return 0;
+	int ret = 0;
+	sqlite3* handle;
+	char sql[512];
+
+	safeword_check(path, -ESAFEWORD_INVARG, fail);
+
+	/* ensure that path does not already exist */
+	safeword_check(access(path, F_OK), -ESAFEWORD_DBEXIST, fail);
+
+	ret = sqlite3_open(path, &handle);
+	safeword_check(!ret, -ESAFEWORD_INTERNAL, fail);
+
+	sprintf(sql, "CREATE TABLE IF NOT EXISTS tags "
+		"(id INTEGER PRIMARY KEY, "
+		"tag TEXT NOT NULL, "
+		"wiki TEXT, "
+		"UNIQUE (tag) ON CONFLICT ABORT, "
+		"CONSTRAINT no_empty_tag CHECK (tag != '')"
+		");");
+	ret = sqlite3_exec(handle, sql, 0, 0, 0);
+
+	sprintf(sql, "CREATE TABLE IF NOT EXISTS usernames "
+		"(id INTEGER PRIMARY KEY, "
+		"username TEXT, "
+		"UNIQUE (username) ON CONFLICT ABORT"
+		");");
+	ret = sqlite3_exec(handle, sql, 0, 0, 0);
+
+	sprintf(sql, "CREATE TABLE IF NOT EXISTS passwords "
+		"(id INTEGER PRIMARY KEY, "
+		"password TEXT, "
+		"UNIQUE (password) ON CONFLICT ABORT "
+		");");
+	ret = sqlite3_exec(handle, sql, 0, 0, 0);
+
+	sprintf(sql, "CREATE TABLE IF NOT EXISTS credentials ("
+		"id INTEGER PRIMARY KEY, "
+		"usernameid INTEGER REFERENCES usernames(id), "
+		"passwordid INTEGER REFERENCES passwords(id), "
+		"description TEXT "
+		");");
+	ret = sqlite3_exec(handle, sql, 0, 0, 0);
+
+	sprintf(sql, "CREATE TABLE IF NOT EXISTS tagged_credentials ("
+		"credentialid INTEGER NOT NULL REFERENCES credentials(id) ON DELETE CASCADE, "
+		"tagid INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE, "
+		"PRIMARY KEY (credentialid, tagid) "
+		");");
+	ret = sqlite3_exec(handle, sql, 0, 0, 0);
+
+	sqlite3_close(handle);
+
+	/* if any of the sqlite3_exec()'s failed, it's an internal error */
+	if (ret)
+		ret = -ESAFEWORD_INTERNAL;
+
+fail:
+	return ret;
 }
+
+/* #endregion safeword init function */
 
 /* #region safeword open & close */
 
@@ -359,6 +419,12 @@ fail:
 /* #endregion safeword credential functions */
 
 /* #region safeword tag functions */
+
+static int tag_callback(void* not_used, int argc, char** argv, char** col_name)
+{
+	_tag_id = atoi(argv[0]);
+	return 0;
+}
 
 int safeword_tag_credential(struct safeword_db *db, int credential_id, const char *tag)
 {

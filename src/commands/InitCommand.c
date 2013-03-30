@@ -6,11 +6,13 @@
 #include <getopt.h>
 #include <sqlite3.h>
 
+#include <safeword.h>
+#include <safeword_errno.h>
 #include "InitCommand.h"
 
-static int force;
+static int _force;
 
-static char* file = NULL;
+static char* _file = NULL;
 
 char* initCmd_help(void)
 {
@@ -34,7 +36,7 @@ int initCmd_parse(int argc, char** argv)
 	while ((c = getopt_long(argc, argv, "f", long_options, 0)) != -1) {
 		switch (c) {
 		case 'f':
-			force = 1;
+			_force = 1;
 			break;
 		}
 	}
@@ -43,7 +45,7 @@ int initCmd_parse(int argc, char** argv)
 	if ((argc - optind) < 1)
 		return ret;
 
-	if (!access(argv[optind], F_OK) && !force) {
+	if (!access(argv[optind], F_OK) && !_force) {
 		fprintf(stderr,
 			"'%s' already exists. Use --force to overwrite.\n",
 			argv[optind]);
@@ -51,12 +53,12 @@ int initCmd_parse(int argc, char** argv)
 		goto fail;
 	}
 
-	file = calloc(strlen(argv[optind]), sizeof(char));
-	if (!file) {
+	_file = calloc(strlen(argv[optind]), sizeof(char));
+	if (!_file) {
 		ret = -ENOMEM;
 		goto fail;
 	}
-	file = strcpy(file, argv[optind]);
+	_file = strcpy(_file, argv[optind]);
 
 fail:
 	return ret;
@@ -65,71 +67,27 @@ fail:
 int initCmd_execute(void)
 {
 	int ret;
-	sqlite3* handle;
-	char* query;
 
-	if (!file)
-		return 0;
+	if (!_file) {
+		fprintf(stderr, "no path specified\n");
+		ret = -ESAFEWORD_DBEXIST;
+		goto fail;
+	}
 
-	if (!access(file, F_OK)) {
-		if (force) {
-			if  (remove(file) != 0) {
-				ret = -EIO;
+	if (!access(_file, F_OK)) {
+		if (_force) {
+			if  (remove(_file) != 0) {
+				ret = -ESAFEWORD_IO;
 				goto fail;
 			}
 		} else {
-			ret = -EEXIST;
+			ret = -ESAFEWORD_DBEXIST;
 			goto fail;
 		}
 	}
 
-	ret = sqlite3_open(file, &handle);
-	if (ret) {
-		fprintf(stderr, "failed to open database\n");
-		return -ret;
-	}
-	free(file);
-
-	query = "CREATE TABLE IF NOT EXISTS tags "
-		"(id INTEGER PRIMARY KEY, "
-		"tag TEXT NOT NULL, "
-		"wiki TEXT, "
-		"UNIQUE (tag) ON CONFLICT ABORT, "
-		"CONSTRAINT no_empty_tag CHECK (tag != '')"
-		");";
-	ret = sqlite3_exec(handle, query, 0, 0, 0);
-
-	query = "CREATE TABLE IF NOT EXISTS usernames "
-		"(id INTEGER PRIMARY KEY, "
-		"username TEXT, "
-		"UNIQUE (username) ON CONFLICT ABORT"
-		");";
-	ret = sqlite3_exec(handle, query, 0, 0, 0);
-
-	query = "CREATE TABLE IF NOT EXISTS passwords "
-		"(id INTEGER PRIMARY KEY, "
-		"password TEXT, "
-		"UNIQUE (password) ON CONFLICT ABORT "
-		");";
-	ret = sqlite3_exec(handle, query, 0, 0, 0);
-
-	query = "CREATE TABLE IF NOT EXISTS credentials ("
-		"id INTEGER PRIMARY KEY, "
-		"usernameid INTEGER REFERENCES usernames(id), "
-		"passwordid INTEGER REFERENCES passwords(id), "
-		"description TEXT "
-		");";
-	ret = sqlite3_exec(handle, query, 0, 0, 0);
-
-	query = "CREATE TABLE IF NOT EXISTS tagged_credentials ("
-		"credentialid INTEGER NOT NULL REFERENCES credentials(id) ON DELETE CASCADE, "
-		"tagid INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE, "
-		"PRIMARY KEY (credentialid, tagid) "
-		");";
-	ret = sqlite3_exec(handle, query, 0, 0, 0);
-
-	sqlite3_close(handle);
+	ret = safeword_init(_file);
 
 fail:
-	return 0;
+	return ret;
 }
