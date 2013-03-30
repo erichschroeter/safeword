@@ -17,6 +17,7 @@
 #define ESAFEWORD_DBEXIST    ENOENT /* safeword db does not exist */
 #define ESAFEWORD_INVARG     256    /* invalid argument */
 #define ESAFEWORD_FIELDEXIST 257    /* field does not exist */
+#define ESAFEWORD_INTERNAL   258    /* internal to safeword */
 
 char* safeword_strerror(int errnum);
 
