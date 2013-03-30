@@ -29,7 +29,7 @@ set(LIBS ${LIBS} ${X11_LIBRARIES} ${X11_Xmu_LIB})
 
 add_subdirectory(src)
 
-install(FILES "${PROJECT_SOURCE_DIR}/doc/bash/safeword.bash_completion"
+install(FILES "${PROJECT_SOURCE_DIR}/doc/bash/safeword.sh"
 DESTINATION "/etc/bash_completion.d"
 PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
 RENAME safeword
