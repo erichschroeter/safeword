@@ -1,14 +1,31 @@
-add_subdirectory(commands)
+set(COMMAND_SRCS
+commands/Command.c
+commands/InitCommand.c
+commands/HelpCommand.c
+commands/AddCommand.c
+commands/RemoveCommand.c
+commands/ListCommand.c
+commands/TagCommand.c
+commands/CopyCommand.c
+commands/InfoCommand.c
+)
+add_library(commands ${COMMAND_SRCS})
 
-set(SRCS
-main.c
+set(SAFEWORD_SRCS
 safeword.c
 )
+add_library(safeword ${SAFEWORD_SRCS})
 
-# put the executable in the root directory
+set(SAFEWORD_CLI_SRCS
+main.c
+)
+
+# put the executable in the project root directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
-add_executable(safeword ${SRCS})
-target_link_libraries(safeword
+add_executable(safewordcli ${SAFEWORD_CLI_SRCS})
+set_target_properties(safewordcli PROPERTIES OUTPUT_NAME safeword)
+target_link_libraries(safewordcli
+safeword
 commands
 ${SQLITE3_LIBRARIES}
 ${X11_LIBRARIES}
@@ -16,4 +33,4 @@ ${X11_Xmu_LIB}
 rt
 )
 
-install(TARGETS safeword RUNTIME DESTINATION bin)
+install(TARGETS safewordcli RUNTIME DESTINATION bin)
