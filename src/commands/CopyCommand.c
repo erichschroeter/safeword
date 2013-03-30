@@ -103,5 +103,6 @@ int copyCmd_execute(void)
 	}
 
 fail:
+	safeword_close(&db);
 	return ret;
 }

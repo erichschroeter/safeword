@@ -46,17 +46,12 @@ int listCmd_parse(int argc, char** argv)
 	if (remaining_args > 0) {
 		tags_size = 0;
 		tags = malloc(remaining_args * sizeof(*tags));
-		if (!tags) {
-			ret = -ENOMEM;
-			goto fail;
-		}
+		safeword_check(tags, -ENOMEM, fail);
 
 		for (i = 0; i < remaining_args; i++) {
 			tags[i] = calloc(strlen(argv[optind]), sizeof(char));
-			if (!tags[i]) {
-				ret = -ENOMEM;
-				goto fail;
-			}
+			safeword_check(tags[i], -ENOMEM, fail);
+
 			strcpy(tags[i], argv[optind]);
 			tags_size++;
 			optind++;
@@ -67,26 +62,13 @@ fail:
 	return 0;
 }
 
-static int credentials_callback(void* not_used, int argc, char** argv, char** col_name)
-{
-	char* description = argv[1];
-	int credential_id = atoi(argv[0]);
-
-	if (!description)
-		description = "";
-
-	printf("%ld : %s\n", credential_id, description);
-	return 0;
-}
-
 int listCmd_execute(void)
 {
 	int ret = 0, i;
 	struct safeword_db db;
 
 	ret = safeword_db_open(&db, 0);
-	if (ret)
-		goto fail;
+	safeword_check(!ret, ret, fail);
 
 	if (tags && !printAll) {
 		safeword_list_credentials(&db, tags_size, tags);
@@ -98,6 +80,7 @@ int listCmd_execute(void)
 		}
 	}
 
+	safeword_close(&db);
 fail:
 	for (i = 0; i < tags_size; i++)
 		free(tags[i]);

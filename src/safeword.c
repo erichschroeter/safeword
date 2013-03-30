@@ -60,6 +60,8 @@ static int tag_callback(void* not_used, int argc, char** argv, char** col_name)
 	return 0;
 }
 
+/* #region safeword open & close */
+
 int safeword_db_open(struct safeword_db *db, const char *path)
 {
 	int ret = 0;
@@ -101,6 +103,21 @@ int safeword_db_open(struct safeword_db *db, const char *path)
 fail:
 	return ret;
 }
+
+int safeword_close(struct safeword_db *db)
+{
+	int ret = 0;
+
+	safeword_check(db, -ESAFEWORD_DBEXIST, fail);
+
+	free(db->path);
+	sqlite3_close(db->handle);
+
+fail:
+	return ret;
+}
+
+/* #endregion safeword open & close */
 
 /* #region safeword list functions */
 

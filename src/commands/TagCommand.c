@@ -304,5 +304,6 @@ fail:
 	for (i = 0; i < _tags->size; i++)
 		free(_tags->data[i]);
 	free(_tags);
+	safeword_close(&db);
 	return ret;
 }

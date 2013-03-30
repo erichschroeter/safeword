@@ -27,7 +27,7 @@ struct safeword_db {
 };
 
 int safeword_open(struct safeword_db *db, const char *path);
-//int safeword_close(sqlite3 **db);
+int safeword_close(struct safeword_db *db);
 int safeword_config(const char* key, const char* value);
 int safeword_credential_add(struct safeword_db *db, int *credential_id,
 	const char *username, const char *password, const char *description);

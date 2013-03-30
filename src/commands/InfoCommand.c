@@ -45,16 +45,15 @@ int infoCmd_execute(void)
 	struct safeword_db db;
 
 	ret = safeword_db_open(&db, 0);
-	if (ret) goto fail;
+	safeword_check(!ret, ret, fail);
 
 	if (_credential_id)
 		ret = safeword_credential_info(&db, _credential_id);
 	else
 		ret = safeword_tag_info(&db, _tag);
 
-	if (ret) goto fail;
-
 fail:
 	free(_tag);
+	safeword_close(&db);
 	return ret;
 }

@@ -110,6 +110,7 @@ int addCmd_execute(void)
 		}
 	}
 
+	safeword_close(&db);
 fail:
 	free(_username);
 	free(_password);

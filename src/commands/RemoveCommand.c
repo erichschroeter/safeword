@@ -39,11 +39,13 @@ int removeCmd_execute(void)
 	struct safeword_db db;
 
 	ret = safeword_db_open(&db, 0);
-	if (ret) goto fail;
+	safeword_check(!ret, ret, fail);
 
 	ret = safeword_credential_remove(&db, _credential_id);
-	if (ret) goto fail;
+	safeword_check(!ret, ret, fail_remove);
 
+fail_remove:
+	safeword_close(&db);
 fail:
 	return ret;
 }
