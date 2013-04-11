@@ -14,7 +14,7 @@
 #include "safeword.h"
 #include "commands/Command.h"
 
-static sqlite3_int64 _tag_id;
+static long int _tag_id;
 static int _id;
 static int _copy_once = 0;
 
@@ -184,7 +184,7 @@ fail:
 static int credentials_callback(void* not_used, int argc, char** argv, char** col_name)
 {
 	char* description = argv[1];
-	int credential_id = atoi(argv[0]);
+	long int credential_id = atoi(argv[0]);
 
 	if (!description)
 		description = "";
@@ -426,7 +426,7 @@ static int tag_callback(void* not_used, int argc, char** argv, char** col_name)
 	return 0;
 }
 
-int safeword_tag_credential(struct safeword_db *db, int credential_id, const char *tag)
+int safeword_tag_credential(struct safeword_db *db, long int credential_id, const char *tag)
 {
 	int ret;
 	char *sql;
@@ -456,7 +456,7 @@ int safeword_tag_credential(struct safeword_db *db, int credential_id, const cha
 	safeword_check(sql, -ENOMEM, fail);
 
 	sprintf(sql, "INSERT OR REPLACE INTO tagged_credentials "
-		"(credentialid, tagid) VALUES (%d, %d);",
+		"(credentialid, tagid) VALUES (%ld, %ld);",
 		credential_id, _tag_id);
 	ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
 	free(sql);
