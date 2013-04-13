@@ -4,7 +4,6 @@
 #include <errno.h>
 #include <unistd.h>
 #include <getopt.h>
-#include <sqlite3.h>
 
 #include <safeword.h>
 #include <safeword_errno.h>
