@@ -24,13 +24,11 @@ main.c
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 add_executable(safewordcli ${SAFEWORD_CLI_SRCS})
 set_target_properties(safewordcli PROPERTIES OUTPUT_NAME safeword)
-target_link_libraries(safewordcli
-safeword
-commands
-${SQLITE3_LIBRARIES}
-${X11_LIBRARIES}
-${X11_Xmu_LIB}
-rt
-)
+if(WIN32)
+	set(LIBS safeword commands ${SQLITE3_LIBRARIES})
+else()
+	set(LIBS safeword commands ${SQLITE3_LIBRARIES} ${X11_LIBRARIES} ${X11_Xmu_LIB} rt)
+endif()
+target_link_libraries(safewordcli ${LIBS})
 
 install(TARGETS safewordcli RUNTIME DESTINATION bin)

@@ -1,6 +1,19 @@
 cmake_minimum_required(VERSION 2.8.5)
+if(WIN32)
+set(CMAKE_C_COMPILER "mingw32-gcc-4.6.2.exe")
+endif()
+
 project(safeword)
-add_definitions(-DDEBUG)
+
+# uncomment line below to enable debug messages
+#add_definitions(-DDEBUG)
+
+if(WIN32)
+	add_definitions(-DWIN32)
+	message("compiling for Windows")
+else()
+	message("compiling for Unix")
+endif()
 
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 1)
@@ -20,12 +33,14 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 set(PROJECT_LIB_PATH "${CMAKE_SOURCE_DIR}/lib")
 
 find_package(Sqlite3 REQUIRED)
-include_directories(${SQLITE3_INCLUDE_DIRS})
+include_directories(${SQLITE3_INCLUDE_DIR})
 set(LIBS ${LIBS} ${SQLITE3_LIBRARIES})
 
-find_package(X11 REQUIRED)
-include_directories(${X11_INCLUDE_DIR})
-set(LIBS ${LIBS} ${X11_LIBRARIES} ${X11_Xmu_LIB})
+if(NOT WIN32)
+	find_package(X11 REQUIRED)
+	include_directories(${X11_INCLUDE_DIR})
+	set(LIBS ${LIBS} ${X11_LIBRARIES} ${X11_Xmu_LIB})
+endif()
 
 add_subdirectory(src)
 
