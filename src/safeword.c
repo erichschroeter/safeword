@@ -6,9 +6,13 @@
 #include <pthread.h>
 #include <limits.h>
 
+#ifdef WIN32
+#include "windows.h"
+#else
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include <X11/Xmu/Atoms.h>
+#endif
 
 #include "dbg.h"
 #include "safeword.h"
@@ -567,6 +571,7 @@ static unsigned int diff(struct timespec *start, struct timespec *end)
 		((start->tv_sec * 1000) + (start->tv_nsec / 1000000));
 }
 
+#ifndef WIN32
 struct __async_waiting_data {
 	volatile int *waiting;
 	Display *dpy;
@@ -638,9 +643,29 @@ static void* wait_for_clipboard_request(void *waiting_data)
 		}
 	}
 }
+#endif
 
 static int copy_credential_callback(void* millis, int argc, char** argv, char** col_name)
 {
+#ifdef WIN32
+	DWORD len = strlen(argv[0]);
+	HGLOBAL lock;
+	LPWSTR data;
+
+	lock = GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, (len + 1) * sizeof(char));
+	data = (LPWSTR)GlobalLock(lock);
+	memcpy(data, argv[0], len * sizeof(char));
+	data[len] = 0;
+	GlobalUnlock(lock);
+
+	// Set clipboard data
+	if (!OpenClipboard(NULL)) return GetLastError();
+	EmptyClipboard();
+	if (!SetClipboardData(CF_TEXT, lock)) return GetLastError();
+	CloseClipboard();
+
+	return 0;
+#else
 	int ret = 0;
 	unsigned int *ms = millis;
 	volatile int waiting = 1;
@@ -688,6 +713,7 @@ static int copy_credential_callback(void* millis, int argc, char** argv, char** 
 fail:
 	free(data);
 	return ret;
+#endif
 }
 
 static int safeword_cp(struct safeword_db *db, int credential_id, unsigned int ms,
