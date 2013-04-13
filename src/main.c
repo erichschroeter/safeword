@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "main.h"
 #include "safeword.h"
 #include "commands/Command.h"
 
@@ -13,7 +14,7 @@ void print_usage()
 
 void print_version()
 {
-	printf("%d.%d.%d\n", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
+	printf("%s safeword-%s\n", VERSION, SAFEWORD_VERSION);
 }
 
 void print_supported_commands()

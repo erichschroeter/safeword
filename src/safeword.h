@@ -4,10 +4,12 @@
 /*
  * Do not manually modify the VERSION defines; they are auto-generated
  */
-#define VERSION_MAJOR @VERSION_MAJOR@
-#define VERSION_MINOR @VERSION_MINOR@
-#define VERSION_PATCH @VERSION_PATCH@
-#define VERSION "@VERSION_MAJOR@.@VERSION_MINOR@.@VERSION_PATCH@"
+#define SAFEWORD_VERSION_MAJOR 0
+#define SAFEWORD_VERSION_MINOR 1
+#define SAFEWORD_VERSION_PATCH 0
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+#define SAFEWORD_VERSION STR(SAFEWORD_VERSION_MAJOR) "." STR(SAFEWORD_VERSION_MINOR) "." STR(SAFEWORD_VERSION_PATCH)
 
 #include <errno.h>
 #include <sqlite3.h>

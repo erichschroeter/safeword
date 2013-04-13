@@ -21,8 +21,8 @@ set(VERSION_PATCH 0)
 
 # configure a header file to pass CMake settings to source code
 configure_file(
-	"${PROJECT_SOURCE_DIR}/src/safeword.h.in"
-	"${PROJECT_BINARY_DIR}/src/safeword.h"
+	"${PROJECT_SOURCE_DIR}/src/main.h.in"
+	"${PROJECT_BINARY_DIR}/src/main.h"
 )
 
 # add the binary tree to the search path for include files for safeword.h
