@@ -1303,11 +1303,22 @@ fail:
 /* #region safeword cp functions */
 
 /* returns the difference in milliseconds */
+#ifdef WIN32
+static unsigned int diff(LARGE_INTEGER *start, LARGE_INTEGER *end)
+{
+	LARGE_INTEGER frequency;
+
+	QueryPerformanceFrequency(&frequency);
+
+	return (end->QuadPart - start->QuadPart) * 1000.0 / frequency.QuadPart;
+}
+#else
 static unsigned int diff(struct timespec *start, struct timespec *end)
 {
 	return ((end->tv_sec * 1000) + (end->tv_nsec / 1000000)) -
 		((start->tv_sec * 1000) + (start->tv_nsec / 1000000));
 }
+#endif
 
 #ifndef WIN32
 struct __async_waiting_data {
@@ -1407,7 +1418,7 @@ static int safeword_cp(struct safeword_db *db, int credential_id, unsigned int m
 #ifdef WIN32
 	DWORD len = strlen(to_copy);
 	HGLOBAL lock;
-	LPWSTR data;
+	LPSTR data;
 
 	lock = GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, (len + 1) * sizeof(char));
 	data = (LPWSTR)GlobalLock(lock);
@@ -1415,7 +1426,7 @@ static int safeword_cp(struct safeword_db *db, int credential_id, unsigned int m
 	data[len] = 0;
 	GlobalUnlock(lock);
 
-	// Set clipboard data
+	/* Set clipboard data */
 	if (!OpenClipboard(NULL)) return GetLastError();
 	EmptyClipboard();
 	if (!SetClipboardData(CF_TEXT, lock)) return GetLastError();
