@@ -34,4 +34,4 @@ else()
 endif()
 target_link_libraries(safewordcli ${LIBS})
 
-install(TARGETS safewordcli RUNTIME DESTINATION bin)
+install(TARGETS safewordcli RUNTIME DESTINATION bin COMPONENT applications)

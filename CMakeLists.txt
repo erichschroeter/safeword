@@ -90,15 +90,23 @@ add_dependencies(safeword docs)
 #
 # Bash Completion
 #
-install(FILES "${PROJECT_SOURCE_DIR}/doc/bash/safeword.sh"
-DESTINATION "/etc/bash_completion.d"
-PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
-RENAME safeword
-)
+if(NOT WIN32)
+	install(FILES "${PROJECT_SOURCE_DIR}/doc/bash/safeword.sh"
+	DESTINATION "/etc/bash_completion.d"
+	PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+	RENAME safeword
+	)
+endif()
+
+#
+# Headers
+#
+install(FILES src/safeword.h
+	DESTINATION include
+	COMPONENT headers
+	)
 
 # CPack Settings
-set(CPACK_GENERATOR "DEB")
-
 set(CPACK_PACKAGE_VERSION_MAJOR "${VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${VERSION_PATCH}")
@@ -108,7 +116,25 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "A cli password manager that puts usabilit
 set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${VERSION_MAJOR}.${VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
 set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${VERSION_MAJOR}.${VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
 
-# Debian specific settings
-set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Erich Schroeter")
+if(WIN32)
+	set(CPACK_GENERATOR "NSIS")
+	set(CPACK_COMPONENTS_ALL applications headers)
+	set(CPACK_COMPONENT_APPLICATIONS_DISPLAY_NAME "command-line interface")
+	set(CPACK_COMPONENT_APPLICATIONS_DESCRIPTION "The command-line interface safeword application.")
+	set(CPACK_COMPONENT_APPLICATIONS_REQUIRED "ON")
+	set(CPACK_COMPONENT_HEADERS_DESCRIPTION "safeword.h")
+
+	# NSIS specific settings
+	set(CPACK_NSIS_MODIFY_PATH "ON")
+	set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL "ON")
+	set(CPACK_NSIS_PACKAGE_NAME "Safeword")
+	set(CPACK_NSIS_DISPLAY_NAME "Safeword")
+	set(CPACK_PACKAGE_INSTALL_DIRECTORY "Safeword")
+else()
+	set(CPACK_GENERATOR "DEB")
+
+	# Debian specific settings
+	set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Erich Schroeter")
+endif()
 
 include(CPack)
