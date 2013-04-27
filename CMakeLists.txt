@@ -17,7 +17,8 @@ endif()
 
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 1)
-set(VERSION_PATCH 0)
+set(VERSION_PATCH 11)
+set(VERSION_META "-beta")
 
 # configure a header file to pass CMake settings to source code
 configure_file(

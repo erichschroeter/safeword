@@ -1,9 +1,6 @@
 #ifndef SAFEWORD_H
 #define SAFEWORD_H
 
-/*
- * Do not manually modify the VERSION defines; they are auto-generated
- */
 #define SAFEWORD_VERSION_MAJOR 0
 #define SAFEWORD_VERSION_MINOR 1
 #define SAFEWORD_VERSION_PATCH 0

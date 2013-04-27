@@ -14,7 +14,7 @@ void print_usage()
 
 void print_version()
 {
-	printf("%s safeword-%s\n", VERSION, SAFEWORD_VERSION);
+	printf("%s safeword-%s\n", SAFEWORD_CLI_VERSION, SAFEWORD_VERSION);
 }
 
 void print_supported_commands()
