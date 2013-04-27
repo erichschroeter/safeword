@@ -423,6 +423,12 @@ fail:
 	return ret;
 }
 
+int safeword_credential_edit(struct safeword_db *db, int credential_id, const char *username,
+	const char *password, const char *message)
+{
+	return 0;
+}
+
 /* #endregion safeword credential functions */
 
 /* #region safeword tag functions */
