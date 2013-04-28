@@ -42,14 +42,22 @@ int infoCmd_execute(void)
 {
 	int ret;
 	struct safeword_db db;
+	struct safeword_credential credential;
 
 	ret = safeword_db_open(&db, 0);
 	safeword_check(!ret, ret, fail);
 
-	if (_credential_id)
-		ret = safeword_credential_info(&db, _credential_id);
-	else
+	if (_credential_id) {
+		credential.id = _credential_id;
+		ret = safeword_credential_info(&db, &credential);
+		fprintf(stdout,
+			"DESCRIPTION: %s\n"
+			"USERNAME   : %s\n"
+			"PASSWORD   : %s\n",
+			credential.message, credential.username, credential.password);
+	} else {
 		ret = safeword_tag_info(&db, _tag);
+	}
 
 fail:
 	free(_tag);

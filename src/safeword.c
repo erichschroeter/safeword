@@ -267,19 +267,39 @@ fail:
 
 /* #region safeword info functions */
 
-static int credential_info_callback(void* not_used, int argc, char** argv, char** col_name)
+static int credential_info_callback(void* credential, int argc, char** argv, char** col_name)
 {
+	struct safeword_credential *cred = (struct safeword_credential*) credential;
+	char *field;
+	int ret;
+
 	if (argc < 3)
 		return -1;
+	if (!cred)
+		return -1;
 
-	printf("DESCRIPTION:\t%s\n", argv[2]);
-	printf("USERNAME:\t%s\n", argv[0]);
-	printf("PASSWORD:\t%s\n", argv[1]);
+	field = calloc(strlen(argv[0]) + 1, sizeof(char));
+	safeword_check(field, -ENOMEM, fail);
+	strcpy(field, argv[0]);
+	cred->username = field;
+
+	field = calloc(strlen(argv[1]) + 1, sizeof(char));
+	safeword_check(field, -ENOMEM, fail);
+	strcpy(field, argv[1]);
+	cred->password = field;
+
+	field = calloc(strlen(argv[2]) + 1, sizeof(char));
+	safeword_check(field, -ENOMEM, fail);
+	strcpy(field, argv[2]);
+	cred->message = field;
 
 	return 0;
+
+fail:
+	return ret;
 }
 
-int safeword_credential_info(struct safeword_db *db, int credential_id)
+int safeword_credential_info(struct safeword_db *db, struct safeword_credential *credential)
 {
 	int ret;
 	char* sql;
@@ -290,8 +310,8 @@ int safeword_credential_info(struct safeword_db *db, int credential_id)
 	sprintf(sql, "SELECT u.username,p.password,c.description FROM credentials AS c "
 		"INNER JOIN usernames AS u ON (c.usernameid = u.id) "
 		"INNER JOIN passwords AS p ON (c.passwordid = p.id) "
-		"WHERE c.id = '%d';", credential_id);
-	ret = sqlite3_exec(db->handle, sql, credential_info_callback, 0, 0);
+		"WHERE c.id = '%d';", credential->id);
+	ret = sqlite3_exec(db->handle, sql, credential_info_callback, credential, 0);
 	free(sql);
 fail:
 	return ret;
