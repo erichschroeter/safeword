@@ -225,6 +225,7 @@ int safeword_list_credentials(struct safeword_db *db, unsigned int tags_size, ch
 		sql = calloc(strlen(tags_concat) + 256, sizeof(char));
 		safeword_check(sql, -ENOMEM, fail);
 
+		/* Find credentials with the specified tags */
 		sprintf(sql, "SELECT c.id,c.description FROM credentials AS c "
 			"INNER JOIN tagged_credentials AS tc "
 			"INNER JOIN tags AS t ON "
@@ -239,6 +240,7 @@ int safeword_list_credentials(struct safeword_db *db, unsigned int tags_size, ch
 			sql = calloc(100, sizeof(char));
 			safeword_check(sql, -ENOMEM, fail);
 
+			/* Find all credentials */
 			sprintf(sql, "SELECT id,description FROM credentials;");
 			ret = sqlite3_exec(db->handle, sql, credentials_callback, 0, 0);
 			free(sql);
@@ -246,6 +248,7 @@ int safeword_list_credentials(struct safeword_db *db, unsigned int tags_size, ch
 			sql = calloc(256, sizeof(char));
 			safeword_check(sql, -ENOMEM, fail);
 
+			/* Find credentials that have no tags */
 			sprintf(sql, "SELECT id,description FROM credentials "
 			"WHERE id NOT IN ("
 			"SELECT credentialid FROM tagged_credentials "
@@ -459,8 +462,44 @@ int safeword_tag_credential(struct safeword_db *db, long int credential_id, cons
 	sql = calloc(strlen(tag) + 256, sizeof(char));
 	safeword_check(sql, -ENOMEM, fail);
 
+	/* Either create or overwrite the mapping between credential and tag */
 	sprintf(sql, "INSERT OR REPLACE INTO tagged_credentials "
 		"(credentialid, tagid) VALUES (%ld, %ld);",
+		credential_id, _tag_id);
+	ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
+	free(sql);
+
+fail:
+	return ret;
+}
+
+int safeword_untag_credential(struct safeword_db *db, long int credential_id, const char *tag)
+{
+	int ret;
+	char *sql;
+	_tag_id = 0; /* set to invalid value to represent it does not exist */
+
+	safeword_check(credential_id, -ESAFEWORD_INVARG, fail);
+	safeword_check(tag, -ESAFEWORD_INVARG, fail);
+
+	sql = calloc(strlen(tag) + 100, sizeof(char));
+	safeword_check(sql, -ENOMEM, fail);
+
+	sprintf(sql, "SELECT id FROM tags WHERE tag='%s';", tag);
+	ret = sqlite3_exec(db->handle, sql, tag_callback, 0, 0);
+	free(sql);
+
+	if (!_tag_id) {
+		ret = -ESAFEWORD_INVARG;
+		goto fail;
+	}
+
+	sql = calloc(strlen(tag) + 256, sizeof(char));
+	safeword_check(sql, -ENOMEM, fail);
+
+	/* Delete the mapping between the credential and tag */
+	sprintf(sql, "DELETE FROM tagged_credentials WHERE "
+		"(credentialid = %ld AND tagid = %ld);",
 		credential_id, _tag_id);
 	ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
 	free(sql);
@@ -490,6 +529,7 @@ int safeword_tag_update(struct safeword_db *db, const char *tag, const char *wik
 		sql = calloc(strlen(wiki) + strlen(tag) + 100, sizeof(char));
 		safeword_check(sql, -ENOMEM, fail);
 
+		/* Replace the existing wiki column value with the new value */
 		sprintf(sql, "UPDATE OR ABORT tags SET wiki = '%s' WHERE tag = '%s';", wiki, tag);
 		ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
 		free(sql);
@@ -513,8 +553,10 @@ int safeword_list_tags(struct safeword_db *db, int credential_id, unsigned int *
 	safeword_check(sql, -ENOMEM, fail);
 
 	if (!credential_id) {
+		/* Find all tags */
 		sprintf(sql, "SELECT tag FROM tags;");
 	} else {
+		/* Find all tags for the specified credential ID */
 		sprintf(sql, "SELECT t.tag FROM tags AS t INNER JOIN tagged_credentials AS c "
 			"ON (c.tagid = t.id) WHERE c.credentialid = %d;", credential_id);
 	}

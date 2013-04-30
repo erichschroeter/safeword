@@ -37,6 +37,7 @@ int safeword_credential_add(struct safeword_db *db, int *credential_id,
 int safeword_credential_remove(struct safeword_db *db, int credential_id);
 int safeword_credential_info(struct safeword_db *db, int credential_id);
 int safeword_tag_credential(struct safeword_db *db, long int credential_id, const char *tag);
+int safeword_untag_credential(struct safeword_db *db, long int credential_id, const char *tag);
 int safeword_tag_info(struct safeword_db *db, const char *tag);
 int safeword_tag_update(struct safeword_db *db, const char *tag, const char *wiki);
 int safeword_tag_delete(struct safeword_db *db, const char *tag);
