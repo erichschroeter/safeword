@@ -11,6 +11,7 @@
 #define MAXBUFFERSIZE 16
 
 static int _force = 0;
+static int _untag = 0;
 static FILE *_wiki_file;
 
 struct array {
@@ -38,7 +39,10 @@ char* tagCmd_help(void)
 "	tag [-d | --delete] [-f | --force] [-m | --move] [-w | --wiki] [ID] TAGS ...\n"
 "\n"
 "DESCRIPTION\n"
-"	This command maps tags to credentials within the safeword database.\n"
+"	This command serves multiple purposes dealing with tags within the safeword database. Without any\n"
+"	arguments it lists all tags within the database. If the first argument is a credential ID(s) the\n"
+"	remaining arguments will be mapped to the credential(s). To specify more than one credential ID can\n"
+"	be a comma separated list.\n"
 "\n"
 "OPTIONS\n"
 "	-d, --delete\n"
@@ -51,6 +55,8 @@ char* tagCmd_help(void)
 "	-w, --wiki FILE\n"
 "	    Specify markdown wiki information about the tag. If FILE is '-' then\n"
 "	    input is read from stdin.\n"
+"	-u, --untag\n"
+"	    Untag the specified tags from the specified credentials.\n"
 "\n";
 }
 
@@ -179,11 +185,12 @@ int tagCmd_parse(int argc, char** argv)
 		{"force",  no_argument,       NULL, 'f'},
 		{"move",   no_argument,       NULL, 'm'},
 		{"wiki",   required_argument, NULL, 'w'},
+		{"untag",  no_argument,       NULL, 'u'},
 	};
 
 	_subcommand.execute = NULL;
 
-	while ((i = getopt_long(argc, argv, "w:dfm", long_options, 0)) != -1) {
+	while ((i = getopt_long(argc, argv, "w:dfmu", long_options, 0)) != -1) {
 		switch (i) {
 		case 'd':
 			safeword_check(!_subcommand.execute, -ESAFEWORD_STATE, fail);
@@ -204,6 +211,9 @@ int tagCmd_parse(int argc, char** argv)
 				safeword_check(_wiki_file, -ESAFEWORD_IO, fail);
 			}
 			_subcommand.execute = &update_tag;
+			break;
+		case 'u':
+			_untag = 1;
 			break;
 		}
 	}
@@ -292,7 +302,10 @@ int tagCmd_execute(void)
 		} else {
 			for (i = 0; i < _credential_ids_size; i++) {
 				for (j = 0; j < _tags->size; j++) {
-					safeword_tag_credential(&db, _credential_ids[i], _tags->data[j]);
+					if (_untag)
+						safeword_credential_untag(&db, _credential_ids[i], _tags->data[j]);
+					else
+						safeword_tag_credential(&db, _credential_ids[i], _tags->data[j]);
 				}
 			}
 		}

@@ -473,7 +473,7 @@ fail:
 	return ret;
 }
 
-int safeword_untag_credential(struct safeword_db *db, long int credential_id, const char *tag)
+int safeword_credential_untag(struct safeword_db *db, long int credential_id, const char *tag)
 {
 	int ret;
 	char *sql;
