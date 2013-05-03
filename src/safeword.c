@@ -317,6 +317,25 @@ fail:
 	return ret;
 }
 
+int safeword_credential_free(struct safeword_credential *credential)
+{
+	int ret = 0, i;
+
+	if (!credential)
+		return 0;
+
+	free(credential->username);
+	free(credential->password);
+	free(credential->message);
+
+	for (i = 0; i < credential->tags_size; i++)
+		free(credential->tags[i]);
+	free(credential->tags);
+
+fail:
+	return ret;
+}
+
 static int tag_info_callback(void* not_used, int argc, char** argv, char** col_name)
 {
 	if (argc < 1)
