@@ -7,12 +7,13 @@
 
 #include <safeword.h>
 #include <safeword_errno.h>
-#include "InitCommand.h"
+#include "EditCommand.h"
+#include "dbg.h"
 
 static int _credential_id;
 static char *_username = 0;
 static char *_password = 0;
-static char *_description = 0;
+static char *_message = 0;
 
 char* editCmd_help(void)
 {
@@ -56,9 +57,9 @@ int editCmd_parse(int argc, char** argv)
 			_password = strcpy(_password, optarg);
 			break;
 		case 'm':
-			_description = calloc(strlen(optarg) + 1, sizeof(char));
-			safeword_check(_description, -ENOMEM, fail);
-			_description = strcpy(_description, optarg);
+			_message = calloc(strlen(optarg) + 1, sizeof(char));
+			safeword_check(_message, -ENOMEM, fail);
+			_message = strcpy(_message, optarg);
 			break;
 		}
 	}
@@ -81,7 +82,7 @@ int editCmd_parse(int argc, char** argv)
 fail:
 	free(_username);
 	free(_password);
-	free(_description);
+	free(_message);
 	_credential_id = 0; /* set to invalid id */
 
 	return ret;
@@ -91,16 +92,47 @@ int editCmd_execute(void)
 {
 	int ret;
 	struct safeword_db db;
+	struct safeword_credential cred;
 
-	if (!_username && !_password && !_description) {
-		/* TODO open text editor */
-		/* TODO parse input from text editor */
+	memset(&cred, 0, sizeof(cred));
+
+	if (!_credential_id) {
+		ret = -ESAFEWORD_ILLEGALARG;
+		goto fail;
 	}
 
 	ret = safeword_db_open(&db, 0);
 	safeword_check(!ret, ret, fail);
 
-	ret = safeword_credential_edit(&db, _credential_id, _username, _password, _description);
+	if (!_username && !_password && !_message) {
+		/* TODO open text editor */
+		char *env = getenv("EDITOR");
+		if (!env) {
+			debug("EDITOR environment variable not set");
+			env = "vi";
+		}
+		printf("opening '%s' to edit credential %d\n", env, _credential_id);
+
+		FILE *temp = fopen("/tmp/SAFEWORD_EDITCRED", "w+");
+		safeword_check(temp, errno, fail);
+
+		ret = safeword_credential_info(&db, &cred);
+		fprintf(temp, "username=%s\n", cred.username);
+		fprintf(temp, "password=%s\n", cred.password);
+		fprintf(temp, "message=%s\n", cred.message);
+		safeword_credential_free(&cred);
+
+		fclose(temp);
+
+		/* TODO parse input from text editor */
+	}
+
+	cred.id = _credential_id;
+	cred.username = _username;
+	cred.password = _password;
+	cred.message = _message;
+
+	ret = safeword_credential_update(&db, &cred);
 	safeword_check(!ret, ret, fail);
 
 	safeword_close(&db);
@@ -108,7 +140,7 @@ int editCmd_execute(void)
 fail:
 	free(_username);
 	free(_password);
-	free(_description);
+	free(_message);
 
 	return ret;
 }
