@@ -511,7 +511,7 @@ static int tag_callback(void* not_used, int argc, char** argv, char** col_name)
 	return 0;
 }
 
-int safeword_tag_credential(struct safeword_db *db, long int credential_id, const char *tag)
+int safeword_credential_tag(struct safeword_db *db, long int credential_id, const char *tag)
 {
 	int ret;
 	char *sql;

@@ -305,7 +305,7 @@ int tagCmd_execute(void)
 					if (_untag)
 						safeword_credential_untag(&db, _credential_ids[i], _tags->data[j]);
 					else
-						safeword_tag_credential(&db, _credential_ids[i], _tags->data[j]);
+						safeword_credential_tag(&db, _credential_ids[i], _tags->data[j]);
 				}
 			}
 		}

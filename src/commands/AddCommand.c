@@ -105,7 +105,7 @@ int addCmd_execute(void)
 
 		tag = strtok(_tags, ",");
 		while (tag != NULL) {
-			safeword_tag_credential(&db, credential_id, tag);
+			safeword_credential_tag(&db, credential_id, tag);
 			tag = strtok(NULL, ",");
 		}
 	}
