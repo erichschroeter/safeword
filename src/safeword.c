@@ -464,40 +464,46 @@ fail:
 
 int safeword_credential_update(struct safeword_db *db, struct safeword_credential *credential)
 {
-	int ret;
+	int ret = 0;
 	char *sql;
+
+	if (!credential->id)
+		goto fail;
 
 	sql = calloc(512, sizeof(char));
 	safeword_check(sql, -ENOMEM, fail);
 
 	if (credential->username) {
-		debug("updating %d to %s", credential->id, credential->username);
+		/* Add the new username to the database if it does not already exist. */
+		sprintf(sql, "INSERT OR IGNORE INTO usernames (username) VALUES ('%s');", credential->username);
+		ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
 		/* Update the usernameid to the id of the username if it exists. */
 		sprintf(sql, "UPDATE OR ABORT credentials SET usernameid = COALESCE("
 			"(SELECT id FROM usernames WHERE username = '%s'), usernameid) WHERE id = %d;",
 			credential->username, credential->id);
 		ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
-		free(sql);
 	}
 
 	if (credential->password) {
+		/* Add the new password to the database if it does not already exist. */
+		sprintf(sql, "INSERT OR IGNORE INTO passwords (password) VALUES ('%s');", credential->password);
+		ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
 		/* Update the passwordid to the id of the password if it exists. */
 		sprintf(sql, "UPDATE OR ABORT credentials SET passwordid = COALESCE("
 			"(SELECT id FROM passwords WHERE password = '%s'), passwordid) WHERE id = %d;",
 			credential->password, credential->id);
 		ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
-		free(sql);
 	}
 
 	if (credential->message) {
-		/* Update the message to the id of the username if it exists. */
-		sprintf(sql, "UPDATE OR ABORT credentials SET message = %s;",
+		/* Update the message if it exists. */
+		sprintf(sql, "UPDATE OR ABORT credentials SET description = '%s' WHERE id = %d;",
 			credential->message, credential->id);
 		ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
-		free(sql);
 	}
 
 fail:
+	free(sql);
 	return ret;
 }
 

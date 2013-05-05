@@ -104,6 +104,7 @@ int editCmd_execute(void)
 	ret = safeword_db_open(&db, 0);
 	safeword_check(!ret, ret, fail);
 
+#if 0
 	if (!_username && !_password && !_message) {
 		/* TODO open text editor */
 		char *env = getenv("EDITOR");
@@ -126,6 +127,7 @@ int editCmd_execute(void)
 
 		/* TODO parse input from text editor */
 	}
+#endif
 
 	cred.id = _credential_id;
 	cred.username = _username;
