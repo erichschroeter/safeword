@@ -6,7 +6,6 @@
 
 # Directories
 ####################
-bin/
 build/
 tmp/
 javadoc/
