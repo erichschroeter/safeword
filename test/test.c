@@ -5,22 +5,51 @@
 
 #include <safeword.h>
 
-#include "tests_safeword_init.h"
+#include "test.h"
 
+const char db1_path[] = "db1.safeword";
 struct safeword_db *db1;
 
-static int suite_safeword_init(void)
+#include "tests_safeword_init.h"
+#include "tests_safeword_add.h"
+
+int suite_safeword_init(void)
 {
+	int ret;
+
+	ret = safeword_init(db1_path);
+	if (ret != 0)
+		return -1;
+
+	db1 = calloc(1, sizeof(*db1));
+	if (!db1)
+		return -1;
+
+	ret = safeword_open(db1, db1_path);
+	if (ret != 0)
+		return -1;
+
 	return 0;
 }
 
-static int suite_safeword_clean(void)
+int suite_safeword_clean(void)
 {
+	int ret;
+
+	ret = safeword_close(db1);
+	if (ret != 0)
+		return -1;
+
+	ret = remove(db1_path);
+	if (ret != 0)
+		return -1;
+
 	return 0;
 }
 
 static CU_SuiteInfo suites[] = {
-	{ "suite_init",  suite_safeword_init, suite_safeword_clean, tests_init },
+	{ "suite_init", NULL,                NULL,                 tests_init },
+	{ "suite_add",  suite_safeword_init, suite_safeword_clean, tests_add },
 	CU_SUITE_INFO_NULL,
 };
 

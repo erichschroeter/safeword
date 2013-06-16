@@ -1,6 +1,7 @@
 set(TEST_SRCS
 test.c
 tests_safeword_init.c
+tests_safeword_add.c
 )
 
 # put the executable in the project root directory
