@@ -67,7 +67,7 @@ int listCmd_execute(void)
 	int ret = 0, i;
 	struct safeword_db db;
 
-	ret = safeword_db_open(&db, 0);
+	ret = safeword_open(&db, 0);
 	safeword_check(!ret, ret, fail);
 
 	if (tags && !printAll) {

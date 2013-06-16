@@ -44,7 +44,7 @@ int infoCmd_execute(void)
 	struct safeword_db db;
 	struct safeword_credential credential;
 
-	ret = safeword_db_open(&db, 0);
+	ret = safeword_open(&db, 0);
 	safeword_check(!ret, ret, fail);
 
 	if (_credential_id) {

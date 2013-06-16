@@ -94,7 +94,7 @@ int addCmd_execute(void)
 		goto fail;
 	}
 
-	ret = safeword_db_open(&db, 0);
+	ret = safeword_open(&db, 0);
 	safeword_check(!ret, ret, fail);
 
 	ret = safeword_credential_add(&db, &credential_id, _username, _password, _description);

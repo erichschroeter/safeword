@@ -74,7 +74,7 @@ int copyCmd_execute(void)
 	int ret = 0, i = 0;
 	struct safeword_db db;
 
-	ret = safeword_db_open(&db, 0);
+	ret = safeword_open(&db, 0);
 	if (ret)
 		goto fail;
 

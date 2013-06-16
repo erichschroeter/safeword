@@ -101,7 +101,7 @@ int editCmd_execute(void)
 		goto fail;
 	}
 
-	ret = safeword_db_open(&db, 0);
+	ret = safeword_open(&db, 0);
 	safeword_check(!ret, ret, fail);
 
 #if 0

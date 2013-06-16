@@ -126,7 +126,7 @@ fail:
 
 /* #region safeword open & close */
 
-int safeword_db_open(struct safeword_db *db, const char *path)
+int safeword_open(struct safeword_db *db, const char *path)
 {
 	int ret = 0;
 

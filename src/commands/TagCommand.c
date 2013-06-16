@@ -285,7 +285,7 @@ int tagCmd_execute(void)
 	struct safeword_db db;
 	char *sql;
 
-	ret = safeword_db_open(&db, 0);
+	ret = safeword_open(&db, 0);
 	safeword_check(!ret, ret, fail);
 
 	if (_subcommand.execute == &delete_tags ||
