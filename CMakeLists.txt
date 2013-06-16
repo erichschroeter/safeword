@@ -43,7 +43,17 @@ if(NOT WIN32)
 	set(LIBS ${LIBS} ${X11_LIBRARIES} ${X11_Xmu_LIB})
 endif()
 
+find_package(CUnit)
+if(CUNIT_FOUND)
+	message("CUnit found")
+	include_directories(${CUNIT_INCLUDE_DIRS})
+	set(LIBS ${LIBS} ${CUNIT_LIBRARIES})
+else()
+	message("CUnit not found")
+endif()
+
 add_subdirectory(src)
+add_subdirectory(test)
 
 install(FILES "${PROJECT_SOURCE_DIR}/doc/bash/safeword.sh"
 DESTINATION "/etc/bash_completion.d"
