@@ -424,6 +424,9 @@ int safeword_credential_add(struct safeword_db *db, int *credential_id,
 	int ret = 0;
 	char* sql;
 
+	if (!db)
+		return -1;
+
 	sql = calloc(100, sizeof(char));
 	sprintf(sql, "INSERT INTO credentials DEFAULT VALUES;");
 	ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
@@ -440,8 +443,10 @@ int safeword_credential_add(struct safeword_db *db, int *credential_id,
 		free(sql);
 	}
 
-	map_username(db->handle, username, *credential_id);
-	map_password(db->handle, password, *credential_id);
+	if (username)
+		map_username(db->handle, username, *credential_id);
+	if (password)
+		map_password(db->handle, password, *credential_id);
 fail:
 	return ret;
 }
