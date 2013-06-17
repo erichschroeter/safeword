@@ -18,13 +18,13 @@
 #include "safeword.h"
 #include "commands/Command.h"
 
+int errno_safeword = 0;
 static long int _tag_id;
 static int _id;
 static int _copy_once = 0;
 
-char* safeword_strerror(int errnum)
+char* strerror_safeword(int errnum)
 {
-	static char text[32];
 	switch (errnum) {
 	case ESAFEWORD_DBEXIST:
 	case -ESAFEWORD_DBEXIST:
@@ -38,13 +38,17 @@ char* safeword_strerror(int errnum)
 	case ESAFEWORD_INTERNAL:
 	case -ESAFEWORD_INTERNAL:
 		return "internal";
-	case ENOMEM:
-	case -ENOMEM:
-		return "no memory";
 	default:
-		sprintf(text, "unknown safeword errno (%d)", errnum);
-		return text;
+		return strerror(errnum);
 	}
+}
+
+void perror_safeword(const char *string)
+{
+	if (string)
+		fprintf(stderr, "%s: ", string);
+
+	fprintf(stderr, "%s", strerror_safeword(errno_safeword));
 }
 
 int safeword_config(const char* key, const char* value)

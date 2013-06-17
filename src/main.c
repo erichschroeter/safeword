@@ -91,11 +91,11 @@ int main(int argc, char** argv)
 					fprintf(stderr, "database does not exist. See 'safeword help init'\n");
 					break;
 				default:
-					fprintf(stderr, "safeword execute error: '%s'\n", safeword_strerror(res));
+					fprintf(stderr, "safeword execute error: '%s'\n", strerror_safeword(res));
 				}
 				break;
 			default:
-				fprintf(stderr, "safeword parsing error: '%s'\n", safeword_strerror(res));
+				fprintf(stderr, "safeword parsing error: '%s'\n", strerror_safeword(res));
 			}
 		} else if (matches) {
 			print_possible_commands(command_str);

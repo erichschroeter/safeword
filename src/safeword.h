@@ -18,7 +18,10 @@
 #define ESAFEWORD_FIELDEXIST 257    /* field does not exist */
 #define ESAFEWORD_INTERNAL   258    /* internal to safeword */
 
-char* safeword_strerror(int errnum);
+extern int errno_safeword;
+
+char* strerror_safeword(int errnum);
+void perror_safeword(const char *string);
 
 struct safeword_db {
 	char    *path;
