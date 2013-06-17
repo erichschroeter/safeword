@@ -11,14 +11,14 @@
 #include <errno.h>
 #include <sqlite3.h>
 
-#define safeword_check(T, ERR, GOTO) if (!(T)) { ret = ERR; goto GOTO; }
-
 #define ESAFEWORD_DBEXIST    ENOENT /* safeword db does not exist */
 #define ESAFEWORD_INVARG     256    /* invalid argument */
 #define ESAFEWORD_FIELDEXIST 257    /* field does not exist */
 #define ESAFEWORD_INTERNAL   258    /* internal to safeword */
 
 extern int errno_safeword;
+
+#define safeword_check(T, ERR, GOTO) if (!(T)) { errno_safeword = (ERR); goto GOTO; }
 
 char* strerror_safeword(int errnum);
 void perror_safeword(const char *string);

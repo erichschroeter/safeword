@@ -73,7 +73,7 @@ int safeword_init(const char *path)
 	safeword_check(path, -ESAFEWORD_INVARG, fail);
 
 	/* ensure that path does not already exist */
-	safeword_check(access(path, F_OK), -ESAFEWORD_DBEXIST, fail);
+	safeword_check(access(path, F_OK) == -1, -ESAFEWORD_DBEXIST, fail);
 
 	ret = sqlite3_open(path, &handle);
 	safeword_check(!ret, -ESAFEWORD_INTERNAL, fail);
@@ -86,6 +86,7 @@ int safeword_init(const char *path)
 		"CONSTRAINT no_empty_tag CHECK (tag != '')"
 		");");
 	ret = sqlite3_exec(handle, sql, 0, 0, 0);
+	safeword_check(!ret, -ESAFEWORD_INTERNAL, fail);
 
 	sprintf(sql, "CREATE TABLE IF NOT EXISTS usernames "
 		"(id INTEGER PRIMARY KEY, "
@@ -93,6 +94,7 @@ int safeword_init(const char *path)
 		"UNIQUE (username) ON CONFLICT ABORT"
 		");");
 	ret = sqlite3_exec(handle, sql, 0, 0, 0);
+	safeword_check(!ret, -ESAFEWORD_INTERNAL, fail);
 
 	sprintf(sql, "CREATE TABLE IF NOT EXISTS passwords "
 		"(id INTEGER PRIMARY KEY, "
@@ -100,6 +102,7 @@ int safeword_init(const char *path)
 		"UNIQUE (password) ON CONFLICT ABORT "
 		");");
 	ret = sqlite3_exec(handle, sql, 0, 0, 0);
+	safeword_check(!ret, -ESAFEWORD_INTERNAL, fail);
 
 	sprintf(sql, "CREATE TABLE IF NOT EXISTS credentials ("
 		"id INTEGER PRIMARY KEY, "
@@ -108,6 +111,7 @@ int safeword_init(const char *path)
 		"description TEXT "
 		");");
 	ret = sqlite3_exec(handle, sql, 0, 0, 0);
+	safeword_check(!ret, -ESAFEWORD_INTERNAL, fail);
 
 	sprintf(sql, "CREATE TABLE IF NOT EXISTS tagged_credentials ("
 		"credentialid INTEGER NOT NULL REFERENCES credentials(id) ON DELETE CASCADE, "
@@ -115,15 +119,13 @@ int safeword_init(const char *path)
 		"PRIMARY KEY (credentialid, tagid) "
 		");");
 	ret = sqlite3_exec(handle, sql, 0, 0, 0);
+	safeword_check(!ret, -ESAFEWORD_INTERNAL, fail);
 
 	sqlite3_close(handle);
 
-	/* if any of the sqlite3_exec()'s failed, it's an internal error */
-	if (ret)
-		ret = -ESAFEWORD_INTERNAL;
-
+	return 0;
 fail:
-	return ret;
+	return -1;
 }
 
 /* #endregion safeword init function */
