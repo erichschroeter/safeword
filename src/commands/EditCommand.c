@@ -132,7 +132,7 @@ int editCmd_execute(void)
 	cred.id = _credential_id;
 	cred.username = _username;
 	cred.password = _password;
-	cred.message = _message;
+	cred.description = _message;
 
 	ret = safeword_credential_update(&db, &cred);
 	safeword_check(!ret, ret, fail);

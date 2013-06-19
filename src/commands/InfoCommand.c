@@ -49,12 +49,12 @@ int infoCmd_execute(void)
 
 	if (_credential_id) {
 		credential.id = _credential_id;
-		ret = safeword_credential_info(&db, &credential);
+		ret = safeword_credential_read(&db, &credential);
 		fprintf(stdout,
 			"DESCRIPTION: %s\n"
 			"USERNAME   : %s\n"
 			"PASSWORD   : %s\n",
-			credential.message, credential.username, credential.password);
+			credential.description, credential.username, credential.password);
 	} else {
 		ret = safeword_tag_info(&db, _tag);
 	}

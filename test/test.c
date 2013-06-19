@@ -48,8 +48,12 @@ int suite_safeword_clean(void)
 }
 
 static CU_SuiteInfo suites[] = {
-	{ "suite_init", NULL,                NULL,                 tests_init },
-	{ "suite_add",  suite_safeword_init, suite_safeword_clean, tests_add },
+	{ "suite_init",                                       NULL,                NULL,                 tests_init },
+	{ "suite_safeword_add_null_db",                       suite_safeword_init, suite_safeword_clean, tests_null },
+	{ "suite_safeword_add_username_only",                 suite_safeword_init, suite_safeword_clean, tests_usernames },
+	{ "suite_safeword_add_password_only",                 suite_safeword_init, suite_safeword_clean, tests_passwords },
+	{ "suite_safeword_add_description_only",              suite_safeword_init, suite_safeword_clean, tests_descriptions },
+	{ "suite_safeword_add_username_password_description", suite_safeword_init, suite_safeword_clean, tests_all },
 	CU_SUITE_INFO_NULL,
 };
 
