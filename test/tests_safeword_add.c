@@ -114,7 +114,7 @@ void test_safeword_add_description_only(void)
 	}
 }
 
-void test_safeword_add_username_password_description(void)
+void test_safeword_add_all(void)
 {
 	int ret, id, i;
 
@@ -125,31 +125,31 @@ void test_safeword_add_username_password_description(void)
 }
 
 CU_TestInfo tests_null[] = {
-	{ "test_safeword_add_null_db",                       test_safeword_add_null_db },
+	{ "test_safeword_add_null_db",          test_safeword_add_null_db },
 	CU_TEST_INFO_NULL,
 };
 CU_TestInfo tests_usernames[] = {
-	{ "test_safeword_add_username_only",                 test_safeword_add_username_only },
+	{ "test_safeword_add_username_only",    test_safeword_add_username_only },
 	CU_TEST_INFO_NULL,
 };
 CU_TestInfo tests_passwords[] = {
-	{ "test_safeword_add_password_only",                 test_safeword_add_password_only },
+	{ "test_safeword_add_password_only",    test_safeword_add_password_only },
 	CU_TEST_INFO_NULL,
 };
 CU_TestInfo tests_descriptions[] = {
-	{ "test_safeword_add_description_only",              test_safeword_add_description_only },
+	{ "test_safeword_add_description_only", test_safeword_add_description_only },
 	CU_TEST_INFO_NULL,
 };
 CU_TestInfo tests_all[] = {
-	{ "test_safeword_add_username_password_description", test_safeword_add_username_password_description },
+	{ "test_safeword_add_all",              test_safeword_add_all },
 	CU_TEST_INFO_NULL,
 };
 
 static CU_SuiteInfo suites_add[] = {
-	{ "suite_safeword_add_null_db",                       suite_safeword_init, suite_safeword_clean, tests_null },
-	{ "suite_safeword_add_username_only",                 suite_safeword_init, suite_safeword_clean, tests_usernames },
-	{ "suite_safeword_add_password_only",                 suite_safeword_init, suite_safeword_clean, tests_passwords },
-	{ "suite_safeword_add_description_only",              suite_safeword_init, suite_safeword_clean, tests_descriptions },
-	{ "suite_safeword_add_username_password_description", suite_safeword_init, suite_safeword_clean, tests_all },
+	{ "suite_safeword_add_null_db",          suite_safeword_init, suite_safeword_clean, tests_null },
+	{ "suite_safeword_add_username_only",    suite_safeword_init, suite_safeword_clean, tests_usernames },
+	{ "suite_safeword_add_password_only",    suite_safeword_init, suite_safeword_clean, tests_passwords },
+	{ "suite_safeword_add_description_only", suite_safeword_init, suite_safeword_clean, tests_descriptions },
+	{ "suite_safeword_add_all",              suite_safeword_init, suite_safeword_clean, tests_all },
 	CU_SUITE_INFO_NULL,
 };
