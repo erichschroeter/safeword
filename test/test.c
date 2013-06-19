@@ -9,6 +9,24 @@
 
 const char db1_path[] = "db1.safeword";
 struct safeword_db *db1;
+struct safeword_credential examples[] = {
+	{
+		.username = "nikolatesla@gmail.com",
+		.password = "My super secret password!!",
+		.description = "Nikola Tesla's Gmail",
+		.tags = {
+			"email",
+			"gmail",
+		},
+	},
+	{ .username = "mariecurie@outlook.com", .password = "R4|)i04ctiV3", .description = "Marie Curie's Outlook" },
+	{ .username = "einstein", .password = "albert", .description = "Home desktop login" },
+	{ .username = "Administrator", .password = "hws772k0ajjvKKU11jLl23", .description = "Work administrator account" },
+	{ .username = "testaccount", .password = "test", .description = "Test account for Blarg 1.0" },
+	{ .username = "root", .password = "", .description = "The most secure root password" },
+	{ .username = NULL, .password = "1234", .description = "Bank PIN" },
+};
+const unsigned int EXAMPLES_SIZE = sizeof(examples) / sizeof(examples[0]);
 
 #include "tests_safeword_init.h"
 #include "tests_safeword_add.h"
@@ -43,6 +61,22 @@ int suite_safeword_clean(void)
 	ret = remove(db1_path);
 	if (ret != 0)
 		return -1;
+
+	return 0;
+}
+
+int suite_safeword_examples(void)
+{
+	int ret, id, i;
+
+	ret = suite_safeword_init();
+	if (ret)
+		return -1;
+
+	for (i = 0; i < EXAMPLES_SIZE; i++) {
+		safeword_credential_add(db1, &id, examples[i].username, examples[i].password, examples[i].description);
+		examples[i].id = id;
+	}
 
 	return 0;
 }
