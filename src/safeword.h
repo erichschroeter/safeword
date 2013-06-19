@@ -11,10 +11,10 @@
 #include <errno.h>
 #include <sqlite3.h>
 
-#define ESAFEWORD_DBEXIST    ENOENT /* safeword db does not exist */
-#define ESAFEWORD_INVARG     256    /* invalid argument */
-#define ESAFEWORD_FIELDEXIST 257    /* field does not exist */
-#define ESAFEWORD_INTERNAL   258    /* internal to safeword */
+#define ESAFEWORD_DBEXIST        1 /* Database does not exist */
+#define ESAFEWORD_INVARG         2 /* Invalid argument */
+#define ESAFEWORD_BACKENDSTORAGE 3 /* Backend storage */
+#define ESAFEWORD_NOMEM          4 /* Out of memory */
 
 extern int errno_safeword;
 
