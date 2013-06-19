@@ -498,6 +498,8 @@ int safeword_credential_remove(struct safeword_db *db, int credential_id)
 	int ret;
 	char *sql;
 
+	safeword_check(db != NULL, -ESAFEWORD_DBEXIST, fail);
+
 	sql = calloc(100, sizeof(char));
 	safeword_check(sql, -ESAFEWORD_NOMEM, fail);
 
@@ -505,8 +507,9 @@ int safeword_credential_remove(struct safeword_db *db, int credential_id)
 	ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
 	free(sql);
 
+	return 0;
 fail:
-	return ret;
+	return -1;
 }
 
 int safeword_credential_update(struct safeword_db *db, struct safeword_credential *credential)
