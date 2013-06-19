@@ -20,8 +20,8 @@ extern int errno_safeword;
 
 #define safeword_check(T, ERR, GOTO) if (!(T)) { errno_safeword = (ERR); goto GOTO; }
 
-char* strerror_safeword(int errnum);
-void perror_safeword(const char *string);
+char* safeword_strerror(int errnum);
+void safeword_perror(const char *string);
 
 struct safeword_db {
 	char    *path;

@@ -23,7 +23,7 @@ static long int _tag_id;
 static int _id;
 static int _copy_once = 0;
 
-char* strerror_safeword(int errnum)
+char* safeword_strerror(int errnum)
 {
 	switch (errnum) {
 	case ESAFEWORD_DBEXIST:
@@ -43,12 +43,12 @@ char* strerror_safeword(int errnum)
 	}
 }
 
-void perror_safeword(const char *string)
+void safeword_perror(const char *string)
 {
 	if (string)
 		fprintf(stderr, "%s: ", string);
 
-	fprintf(stderr, "%s", strerror_safeword(errno_safeword));
+	fprintf(stderr, "%s", safeword_strerror(errno_safeword));
 }
 
 int safeword_config(const char* key, const char* value)
