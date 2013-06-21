@@ -16,72 +16,34 @@ void test_safeword_remove_null_db(void)
 	CU_ASSERT(ret != 0);
 }
 
-void test_safeword_remove_username_only(void)
+void test_safeword_remove_one(void)
 {
-	int ret, i;
+	int ret, id1 = 1, id2 = 2;
 
-	for (i = 0; i < EXAMPLES_SIZE; i++) {
-		ret = safeword_credential_remove(db1, examples[i].id);
-		CU_ASSERT(ret == 0);
-	}
-}
+	/* Verify two known credentials exist. */
+	ret = safeword_credential_exists(db1, id1);
+	CU_ASSERT_EQUAL(ret, 1);
+	ret = safeword_credential_exists(db1, id2);
+	CU_ASSERT_EQUAL(ret, 1);
 
-void test_safeword_remove_password_only(void)
-{
-	int ret, i;
+	/* Delete one of the existing credentials. */
+	ret = safeword_credential_remove(db1, id1);
+	CU_ASSERT(ret == 0);
 
-	for (i = 0; i < EXAMPLES_SIZE; i++) {
-		ret = safeword_credential_remove(db1, examples[i].id);
-		CU_ASSERT(ret == 0);
-	}
-}
+	/* Verify deleted credential no longer exists. */
+	ret = safeword_credential_exists(db1, id1);
+	CU_ASSERT_EQUAL(ret, 0);
 
-void test_safeword_remove_description_only(void)
-{
-	int ret, i;
-
-	for (i = 0; i < EXAMPLES_SIZE; i++) {
-		ret = safeword_credential_remove(db1, examples[i].id);
-		CU_ASSERT(ret == 0);
-	}
-}
-
-void test_safeword_remove_all(void)
-{
-	int ret, i;
-
-	for (i = 0; i < EXAMPLES_SIZE; i++) {
-		ret = safeword_credential_remove(db1, examples[i].id);
-		CU_ASSERT(ret == 0);
-	}
+	/* Verify non-deleted credential still exists. */
+	ret = safeword_credential_exists(db1, id2);
+	CU_ASSERT_EQUAL(ret, 1);
 }
 
 CU_TestInfo tests_remove_null[] = {
-	{ "test_safeword_remove_null_db",          test_safeword_remove_null_db },
+	{ "test_safeword_remove_null_db", test_safeword_remove_null_db },
 	CU_TEST_INFO_NULL,
 };
-CU_TestInfo tests_remove_usernames[] = {
-	{ "test_safeword_remove_username_only",    test_safeword_remove_username_only },
+CU_TestInfo tests_remove_one[] = {
+	{ "test_safeword_remove_one", test_safeword_remove_one },
 	CU_TEST_INFO_NULL,
-};
-CU_TestInfo tests_remove_passwords[] = {
-	{ "test_safeword_remove_password_only",    test_safeword_remove_password_only },
-	CU_TEST_INFO_NULL,
-};
-CU_TestInfo tests_remove_descriptions[] = {
-	{ "test_safeword_remove_description_only", test_safeword_remove_description_only },
-	CU_TEST_INFO_NULL,
-};
-CU_TestInfo tests_remove_all[] = {
-	{ "test_safeword_remove_all",              test_safeword_remove_all },
-	CU_TEST_INFO_NULL,
-};
-
-static CU_SuiteInfo suites_remove[] = {
-	{ "suite_safeword_remove_null_db",                       suite_safeword_init, suite_safeword_clean, tests_remove_null },
-	{ "suite_safeword_remove_username_only",                 suite_safeword_init, suite_safeword_clean, tests_remove_usernames },
-	{ "suite_safeword_remove_password_only",                 suite_safeword_init, suite_safeword_clean, tests_remove_passwords },
-	{ "suite_safeword_remove_description_only",              suite_safeword_init, suite_safeword_clean, tests_remove_descriptions },
-	{ "suite_safeword_remove_username_password_description", suite_safeword_init, suite_safeword_clean, tests_remove_all },
-	CU_SUITE_INFO_NULL,
 };

@@ -89,11 +89,8 @@ static CU_SuiteInfo suites[] = {
 	{ "suite_safeword_add_password_only",       suite_safeword_init,     suite_safeword_clean, tests_passwords },
 	{ "suite_safeword_add_description_only",    suite_safeword_init,     suite_safeword_clean, tests_descriptions },
 	{ "suite_safeword_add_all",                 suite_safeword_init,     suite_safeword_clean, tests_all },
-	{ "suite_safeword_remove_null_db",          suite_safeword_examples, suite_safeword_clean, tests_remove_null },
-	{ "suite_safeword_remove_username_only",    suite_safeword_examples, suite_safeword_clean, tests_remove_usernames },
-	{ "suite_safeword_remove_password_only",    suite_safeword_examples, suite_safeword_clean, tests_remove_passwords },
-	{ "suite_safeword_remove_description_only", suite_safeword_examples, suite_safeword_clean, tests_remove_descriptions },
-	{ "suite_safeword_remove_all",              suite_safeword_examples, suite_safeword_clean, tests_remove_all },
+	{ "suite_safeword_remove_null_db",          NULL,                    NULL,                 tests_remove_null },
+	{ "suite_safeword_remove_one",              suite_safeword_examples, suite_safeword_clean, tests_remove_one },
 	CU_SUITE_INFO_NULL,
 };
 
