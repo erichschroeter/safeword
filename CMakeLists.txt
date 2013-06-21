@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.5)
 if(WIN32)
 set(CMAKE_C_COMPILER "mingw32-gcc-4.6.2.exe")
 endif()
+set(CMAKE_C_FLAGS "-Wall")
 
 project(safeword)
 
