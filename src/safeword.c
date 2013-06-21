@@ -18,7 +18,7 @@
 #include "safeword.h"
 #include "commands/Command.h"
 
-int errno_safeword = 0;
+int safeword_errno = 0;
 static long int _tag_id;
 static int _id;
 static int _copy_once = 0;
@@ -48,7 +48,7 @@ void safeword_perror(const char *string)
 	if (string)
 		fprintf(stderr, "%s: ", string);
 
-	fprintf(stderr, "%s", safeword_strerror(errno_safeword));
+	fprintf(stderr, "%s", safeword_strerror(safeword_errno));
 }
 
 int safeword_config(const char* key, const char* value)

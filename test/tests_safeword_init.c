@@ -23,7 +23,7 @@ void test_safeword_no_overwrite(void)
 	/* Verify that we get correct error return value. */
 	ret = safeword_init(path);
 	CU_ASSERT(ret == -1);
-	CU_ASSERT(errno_safeword == -ESAFEWORD_DBEXIST);
+	CU_ASSERT(safeword_errno == -ESAFEWORD_DBEXIST);
 
 	/* Remove the safeword database created. */
 	ret = remove(path);

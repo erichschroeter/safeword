@@ -16,9 +16,9 @@
 #define ESAFEWORD_BACKENDSTORAGE 3 /* Backend storage */
 #define ESAFEWORD_NOMEM          4 /* Out of memory */
 
-extern int errno_safeword;
+extern int safeword_errno;
 
-#define safeword_check(T, ERR, GOTO) if (!(T)) { errno_safeword = (ERR); goto GOTO; }
+#define safeword_check(T, ERR, GOTO) if (!(T)) { safeword_errno = (ERR); goto GOTO; }
 
 char* safeword_strerror(int errnum);
 void safeword_perror(const char *string);
