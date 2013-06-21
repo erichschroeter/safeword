@@ -6,7 +6,7 @@
 void test_safeword_remove_null_db(void)
 {
 	struct safeword_db *null_ptr = 0;
-	int ret, dummy;
+	int ret;
 
 	/* In case logic ever changes precedence checking for invalid credential id. */
 	ret = safeword_credential_remove(null_ptr, 0);

@@ -28,9 +28,6 @@ int removeCmd_parse(int argc, char** argv)
 	_credential_id = atoi(argv[1]);
 
 	return ret;
-
-fail:
-	return ret;
 }
 
 int removeCmd_execute(void)

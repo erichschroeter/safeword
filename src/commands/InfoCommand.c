@@ -34,7 +34,6 @@ int infoCmd_parse(int argc, char** argv)
 		_credential_id = 0;
 	}
 
-fail:
 	return ret;
 }
 

@@ -65,7 +65,6 @@ int copyCmd_parse(int argc, char** argv)
 	if (remaining_args)
 		_credential_id = atoi(argv[optind]);
 
-fail:
 	return ret;
 }
 
@@ -92,7 +91,7 @@ int copyCmd_execute(void)
 				safeword_cp_username(&db, _credential_id, _seconds * 1000);
 				break;
 			case PASSWORD:
-			defaul:
+			default:
 				safeword_cp_password(&db, _credential_id, _seconds * 1000);
 				break;
 			};

@@ -29,7 +29,7 @@ char* listCmd_help(void)
 
 int listCmd_parse(int argc, char** argv)
 {
-	int ret, i, remaining_args = 0, c;
+	int i, remaining_args = 0, c;
 	struct option long_options[] = {
 		{"all",	no_argument,	NULL,	'a'},
 	};

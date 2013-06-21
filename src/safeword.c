@@ -400,7 +400,6 @@ int safeword_credential_free(struct safeword_credential *credential)
 		free(credential->tags[i]);
 	free(credential->tags);
 
-fail:
 	return 0;
 }
 
@@ -780,7 +779,7 @@ struct __async_waiting_data {
 	volatile int *waiting;
 	Display *dpy;
 	Window *win;
-	unsigned char *data;
+	char *data;
 };
 
 static void* wait_for_clipboard_request(void *waiting_data)
@@ -846,6 +845,7 @@ static void* wait_for_clipboard_request(void *waiting_data)
 			XFlush(dpy);
 		}
 	}
+	return 0;
 }
 #endif
 
@@ -873,7 +873,7 @@ static int copy_credential_callback(void* millis, int argc, char** argv, char** 
 	int ret = 0;
 	unsigned int *ms = millis;
 	volatile int waiting = 1;
-	unsigned char *data;
+	char *data;
 	struct timespec start, now;
 	Display *dpy;
 	Window win;

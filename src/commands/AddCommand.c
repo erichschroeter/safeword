@@ -73,7 +73,6 @@ fail_username:
 fail_options:
 	free(_tags);
 	free(_description);
-fail:
 	return ret;
 }
 

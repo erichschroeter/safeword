@@ -149,7 +149,6 @@ static int update_tag(struct safeword_db* db, void *update_info)
 		ret = fread(wiki, 1, wiki_size, info->file);
 		safeword_check(ret == wiki_size, -ESAFEWORD_IO, fail);
 	} else {
-		char c;
 		char buffer[1024];
 		buffer[0] = '\0';
 		wiki_size = 0;
@@ -222,7 +221,7 @@ int tagCmd_parse(int argc, char** argv)
 
 	/* START of parsing credential ids */
 	if (!_subcommand.execute && remaining_args > 0) {
-		int i = 0, id, tags_size = 0;
+		int i = 0, id;
 		char *id_str, *ids_backup, **tags;
 
 		ids_backup = calloc(strlen(argv[optind]) + 1, sizeof(char));
@@ -283,7 +282,6 @@ int tagCmd_execute(void)
 {
 	int ret = 0, i, j;
 	struct safeword_db db;
-	char *sql;
 
 	ret = safeword_open(&db, 0);
 	safeword_check(!ret, ret, fail);
