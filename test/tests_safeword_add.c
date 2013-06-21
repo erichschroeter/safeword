@@ -124,32 +124,23 @@ void test_safeword_add_all(void)
 	}
 }
 
-CU_TestInfo tests_null[] = {
+CU_TestInfo tests_add_null[] = {
 	{ "test_safeword_add_null_db",          test_safeword_add_null_db },
 	CU_TEST_INFO_NULL,
 };
-CU_TestInfo tests_usernames[] = {
+CU_TestInfo tests_add_usernames[] = {
 	{ "test_safeword_add_username_only",    test_safeword_add_username_only },
 	CU_TEST_INFO_NULL,
 };
-CU_TestInfo tests_passwords[] = {
+CU_TestInfo tests_add_passwords[] = {
 	{ "test_safeword_add_password_only",    test_safeword_add_password_only },
 	CU_TEST_INFO_NULL,
 };
-CU_TestInfo tests_descriptions[] = {
+CU_TestInfo tests_add_descriptions[] = {
 	{ "test_safeword_add_description_only", test_safeword_add_description_only },
 	CU_TEST_INFO_NULL,
 };
-CU_TestInfo tests_all[] = {
+CU_TestInfo tests_add_all[] = {
 	{ "test_safeword_add_all",              test_safeword_add_all },
 	CU_TEST_INFO_NULL,
-};
-
-static CU_SuiteInfo suites_add[] = {
-	{ "suite_safeword_add_null_db",          suite_safeword_init, suite_safeword_clean, tests_null },
-	{ "suite_safeword_add_username_only",    suite_safeword_init, suite_safeword_clean, tests_usernames },
-	{ "suite_safeword_add_password_only",    suite_safeword_init, suite_safeword_clean, tests_passwords },
-	{ "suite_safeword_add_description_only", suite_safeword_init, suite_safeword_clean, tests_descriptions },
-	{ "suite_safeword_add_all",              suite_safeword_init, suite_safeword_clean, tests_all },
-	CU_SUITE_INFO_NULL,
 };

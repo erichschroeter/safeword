@@ -84,11 +84,11 @@ int suite_safeword_examples(void)
 
 static CU_SuiteInfo suites[] = {
 	{ "suite_init",                             NULL,                    NULL,                 tests_init },
-	{ "suite_safeword_add_null_db",             suite_safeword_init,     suite_safeword_clean, tests_null },
-	{ "suite_safeword_add_username_only",       suite_safeword_init,     suite_safeword_clean, tests_usernames },
-	{ "suite_safeword_add_password_only",       suite_safeword_init,     suite_safeword_clean, tests_passwords },
-	{ "suite_safeword_add_description_only",    suite_safeword_init,     suite_safeword_clean, tests_descriptions },
-	{ "suite_safeword_add_all",                 suite_safeword_init,     suite_safeword_clean, tests_all },
+	{ "suite_safeword_add_null_db",             NULL,                    NULL,                 tests_add_null },
+	{ "suite_safeword_add_username_only",       suite_safeword_init,     suite_safeword_clean, tests_add_usernames },
+	{ "suite_safeword_add_password_only",       suite_safeword_init,     suite_safeword_clean, tests_add_passwords },
+	{ "suite_safeword_add_description_only",    suite_safeword_init,     suite_safeword_clean, tests_add_descriptions },
+	{ "suite_safeword_add_all",                 suite_safeword_init,     suite_safeword_clean, tests_add_all },
 	{ "suite_safeword_remove_null_db",          NULL,                    NULL,                 tests_remove_null },
 	{ "suite_safeword_remove_one",              suite_safeword_examples, suite_safeword_clean, tests_remove_one },
 	CU_SUITE_INFO_NULL,
