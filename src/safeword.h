@@ -33,14 +33,15 @@ struct safeword_credential {
 	char *username;
 	char *password;
 	char *description;
-	char **tags;
 	unsigned int tags_size;
+	char **tags;
 };
 
 int safeword_init(const char *path);
 int safeword_open(struct safeword_db *db, const char *path);
 int safeword_close(struct safeword_db *db);
 int safeword_config(const char* key, const char* value);
+int safeword_credential_exists(struct safeword_db *db, long int credential_id);
 int safeword_credential_add(struct safeword_db *db, int *credential_id,
 	const char *username, const char *password, const char *description);
 int safeword_credential_remove(struct safeword_db *db, int credential_id);

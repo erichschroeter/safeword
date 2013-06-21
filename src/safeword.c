@@ -274,6 +274,34 @@ fail:
 
 /* #region safeword info functions */
 
+static int credential_exists_callback(void* credential_id, int argc, char** argv, char** columns)
+{
+	int *id = (int*) credential_id;
+	*id = 1;
+	return 0;
+}
+
+int safeword_credential_exists(struct safeword_db *db, long int credential_id)
+{
+	int ret, exists = 0;
+	char* sql;
+
+	sql = calloc(256, sizeof(char));
+	safeword_check(sql, -ESAFEWORD_NOMEM, fail);
+
+	sprintf(sql, "SELECT id FROM credentials WHERE id = %ld;", credential_id);
+	ret = sqlite3_exec(db->handle, sql, &credential_exists_callback, &exists, 0);
+	safeword_check(ret == 0, -ESAFEWORD_BACKENDSTORAGE, fail_sql);
+
+	free(sql);
+
+	return exists;
+fail_sql:
+	free(sql);
+fail:
+	return -1;
+}
+
 static int credential_get_credential_callback(void* cred, int argc, char** argv, char** columns)
 {
 	struct safeword_credential *credential = (struct safeword_credential*) cred;
