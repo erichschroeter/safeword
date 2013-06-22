@@ -274,6 +274,47 @@ fail:
 
 /* #region safeword info functions */
 
+char* safeword_credential_tostring(struct safeword_credential *credential)
+{
+	int i, len = 0;
+	char *str;
+
+	if (!credential)
+		return NULL;
+
+	if (credential->username)
+		len += strlen(credential->username);
+	if (credential->password)
+		len += strlen(credential->password);
+	if (credential->description)
+		len += strlen(credential->description);
+	for (i = 0; i < credential->tags_size; i++)
+		if (credential->tags[i])
+			len += strlen(credential->tags[i]);
+
+	str = calloc(256 + len + 1, sizeof(char));
+	safeword_check(str != NULL, ESAFEWORD_NOMEM, fail);
+
+	len = sprintf(str, "{ id='%d', username='%s', password='%s', description='%s', tags='",
+		credential->id,
+		credential->username ? credential->username : "",
+		credential->password ? credential->password : "",
+		credential->description ? credential->description : "");
+
+	for (i = 0; i < credential->tags_size; i++) {
+		if (!credential->tags[i])
+			continue;
+		if (i != 0)
+			len += sprintf(len + str, " ");
+		len += sprintf(len + str, "%s", credential->tags[i]);
+	}
+	sprintf(len + str, "' }");
+
+	return str;
+fail:
+	return NULL;
+}
+
 static int credential_exists_callback(void* credential_id, int argc, char** argv, char** columns)
 {
 	int *id = (int*) credential_id;

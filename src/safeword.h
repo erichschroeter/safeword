@@ -41,6 +41,7 @@ int safeword_init(const char *path);
 int safeword_open(struct safeword_db *db, const char *path);
 int safeword_close(struct safeword_db *db);
 int safeword_config(const char* key, const char* value);
+char* safeword_credential_tostring(struct safeword_credential *credential);
 int safeword_credential_exists(struct safeword_db *db, long int credential_id);
 int safeword_credential_add(struct safeword_db *db, int *credential_id,
 	const char *username, const char *password, const char *description);
