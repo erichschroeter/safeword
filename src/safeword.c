@@ -630,7 +630,7 @@ fail:
 	return -1;
 }
 
-int safeword_credential_remove(struct safeword_db *db, int credential_id)
+int safeword_credential_delete(struct safeword_db *db, long int credential_id)
 {
 	int ret;
 	char *sql;
@@ -640,7 +640,7 @@ int safeword_credential_remove(struct safeword_db *db, int credential_id)
 	sql = calloc(100, sizeof(char));
 	safeword_check(sql, ESAFEWORD_NOMEM, fail);
 
-	sprintf(sql, "DELETE FROM credentials WHERE id = '%d';", credential_id);
+	sprintf(sql, "DELETE FROM credentials WHERE id = '%ld';", credential_id);
 	ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
 	safeword_check(ret == 0, ESAFEWORD_BACKENDSTORAGE, fail_sql);
 	free(sql);

@@ -38,7 +38,7 @@ int removeCmd_execute(void)
 	ret = safeword_open(&db, 0);
 	safeword_check(!ret, ret, fail);
 
-	ret = safeword_credential_remove(&db, _credential_id);
+	ret = safeword_credential_delete(&db, _credential_id);
 	safeword_check(!ret, ret, fail_remove);
 
 fail_remove:
