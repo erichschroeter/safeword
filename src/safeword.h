@@ -15,6 +15,7 @@
 #define ESAFEWORD_INVARG         2 /* Invalid argument */
 #define ESAFEWORD_BACKENDSTORAGE 3 /* Backend storage */
 #define ESAFEWORD_NOMEM          4 /* Out of memory */
+#define ESAFEWORD_NOCREDENTIAL   5 /* Credential does not exist */
 
 extern int safeword_errno;
 
