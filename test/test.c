@@ -18,6 +18,7 @@ struct safeword_credential examples[] = {
 		.username = "nikolatesla@gmail.com",
 		.password = "My super secret password!!",
 		.description = "Nikola Tesla's Gmail",
+		.tags_size = 2,
 		.tags = example1_tags,
 	},
 	{ .username = "mariecurie@outlook.com", .password = "R4|)i04ctiV3", .description = "Marie Curie's Outlook" },
@@ -70,7 +71,7 @@ int suite_safeword_clean(void)
 
 int suite_safeword_examples(void)
 {
-	int ret, id, i;
+	int ret, id, i, j;
 
 	ret = suite_safeword_init();
 	if (ret)
@@ -79,6 +80,8 @@ int suite_safeword_examples(void)
 	for (i = 0; i < EXAMPLES_SIZE; i++) {
 		safeword_credential_add(db1, &id, examples[i].username, examples[i].password, examples[i].description);
 		examples[i].id = id;
+		for (j = 0; j < examples[i].tags_size; j++)
+			safeword_credential_tag(db1, id, examples[i].tags[j]);
 	}
 
 	return 0;

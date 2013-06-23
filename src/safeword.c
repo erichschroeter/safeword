@@ -38,6 +38,9 @@ char* safeword_strerror(int errnum)
 	case ESAFEWORD_NOMEM:
 	case -ESAFEWORD_NOMEM:
 		return "Out of memory";
+	case ESAFEWORD_NOCREDENTIAL:
+	case -ESAFEWORD_NOCREDENTIAL:
+		return "Credential does not exist";
 	default:
 		return strerror(errnum);
 	}
@@ -345,6 +348,13 @@ fail:
 	return -1;
 }
 
+static int credential_get_tags_size_callback(void* cred, int argc, char** argv, char** columns)
+{
+	struct safeword_credential *credential = (struct safeword_credential*) cred;
+	credential->tags_size = strtol(argv[0], NULL, 10);
+	return 0;
+}
+
 static int credential_get_credential_callback(void* cred, int argc, char** argv, char** columns)
 {
 	struct safeword_credential *credential = (struct safeword_credential*) cred;
@@ -387,7 +397,7 @@ fail:
 
 int safeword_credential_read(struct safeword_db *db, struct safeword_credential *credential)
 {
-	int ret;
+	int ret, i = 0;
 	char* sql;
 
 	ret = safeword_credential_exists(db, credential->id);
@@ -426,8 +436,52 @@ int safeword_credential_read(struct safeword_db *db, struct safeword_credential 
 	ret = sqlite3_exec(db->handle, sql, &credential_get_credential_callback, credential, 0);
 	safeword_check(ret == 0, ESAFEWORD_BACKENDSTORAGE, fail_sql);
 
+	/* Find all tags for the specified credential ID */
+	credential->tags_size = 0;
+	credential->tags = 0;
+	sprintf(sql, "SELECT count(*) FROM (SELECT t.tag FROM tags AS t INNER JOIN tagged_credentials AS tc "
+		"ON (tc.tagid = t.id) WHERE tc.credentialid = %d);", credential->id);
+	ret = sqlite3_exec(db->handle, sql, &credential_get_tags_size_callback, credential, 0);
+	safeword_check(ret == 0, ESAFEWORD_BACKENDSTORAGE, fail_sql);
+
+	credential->tags = calloc(credential->tags_size, sizeof(char*));
+	safeword_check(credential->tags != 0, ESAFEWORD_NOMEM, fail_sql);
+
+	sqlite3_stmt *stmt = NULL;
+	sprintf(sql, "SELECT t.tag FROM tags AS t INNER JOIN tagged_credentials AS tc "
+		"ON (tc.tagid = t.id) WHERE tc.credentialid = %d;", credential->id);
+	ret = sqlite3_prepare_v2(db->handle, sql, strlen(sql) + 1, &stmt, NULL);
+	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail_tags);
+	const char *tag;
+	do {
+		ret = sqlite3_step(stmt);
+
+		switch (ret) {
+		case SQLITE_DONE:
+			break;
+		case SQLITE_ROW:
+			tag = (const char*) sqlite3_column_text(stmt, 0);
+			if (!tag) continue;
+			credential->tags[i] = calloc(strlen(tag) + 1, sizeof(char));
+			safeword_check(credential->tags[i], ESAFEWORD_NOMEM, fail_tag);
+			strcpy(credential->tags[i], tag);
+			i++;
+			break;
+		default:
+			break;
+		}
+	} while (ret == SQLITE_ROW);
+	safeword_check(ret == SQLITE_DONE, ESAFEWORD_BACKENDSTORAGE, fail);
+	ret = sqlite3_finalize(stmt);
+	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+
 	free(sql);
 	return 0;
+fail_tag:
+	for (; i > 0; i--)
+		free(credential->tags[i]);
+fail_tags:
+	free(credential->tags);
 fail_sql:
 	free(sql);
 fail:

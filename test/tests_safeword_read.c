@@ -46,7 +46,7 @@ void test_safeword_read_invalid_id(void)
 
 void test_safeword_read_examples(void)
 {
-	int i, ret;
+	int i, j, ret;
 	struct safeword_credential credential;
 
 	for (i = 0; i < EXAMPLES_SIZE; i++) {
@@ -78,7 +78,8 @@ void test_safeword_read_examples(void)
 		} else
 			CU_ASSERT_STRING_EQUAL(credential.description, examples[i].description);
 		CU_ASSERT(credential.tags_size == examples[i].tags_size);
-		/* TODO Verify each tag */
+		for (j = 0; j < examples[i].tags_size; j++)
+			CU_ASSERT_STRING_EQUAL(credential.tags[j], examples[i].tags[j]);
 	}
 }
 
