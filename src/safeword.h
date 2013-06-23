@@ -46,11 +46,12 @@ char* safeword_credential_tostring(struct safeword_credential *credential);
 int safeword_credential_exists(struct safeword_db *db, long int credential_id);
 int safeword_credential_add(struct safeword_db *db, int *credential_id,
 	const char *username, const char *password, const char *description);
+struct safeword_credential *safeword_credential_create(const char *username, const char *password, const char *description);
+int safeword_credential_read(struct safeword_db *db, struct safeword_credential *credential);
+int safeword_credential_update(struct safeword_db *db, struct safeword_credential *credential);
 int safeword_credential_delete(struct safeword_db *db, long int credential_id);
 int safeword_credential_untag(struct safeword_db *db, long int credential_id, const char *tag);
-int safeword_credential_read(struct safeword_db *db, struct safeword_credential *credential);
 int safeword_credential_free(struct safeword_credential *credential);
-int safeword_credential_update(struct safeword_db *db, struct safeword_credential *credential);
 int safeword_credential_tag(struct safeword_db *db, long int credential_id, const char *tag);
 int safeword_tag_info(struct safeword_db *db, const char *tag);
 int safeword_tag_update(struct safeword_db *db, const char *tag, const char *wiki);

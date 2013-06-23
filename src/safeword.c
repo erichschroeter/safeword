@@ -630,6 +630,40 @@ fail:
 	return -1;
 }
 
+struct safeword_credential *safeword_credential_create(const char *username, const char *password, const char *description)
+{
+	struct safeword_credential *cred = calloc(1, sizeof(struct safeword_credential));
+	safeword_check(cred != NULL, ESAFEWORD_NOMEM, fail);
+
+	if (username) {
+		cred->username = calloc(strlen(username) + 1, sizeof(char));
+		safeword_check(cred != NULL, ESAFEWORD_NOMEM, fail_username);
+		strcpy(cred->username, username);
+	}
+	if (password) {
+		cred->password = calloc(strlen(password) + 1, sizeof(char));
+		safeword_check(cred != NULL, ESAFEWORD_NOMEM, fail_password);
+		strcpy(cred->password, password);
+	}
+	if (description) {
+		cred->description = calloc(strlen(description) + 1, sizeof(char));
+		safeword_check(cred != NULL, ESAFEWORD_NOMEM, fail_description);
+		strcpy(cred->description, description);
+	}
+
+	return cred;
+fail_description:
+	if (cred->password)
+		free(cred->password);
+fail_password:
+	if (cred->username)
+		free(cred->username);
+fail_username:
+	free(cred);
+fail:
+	return NULL;
+}
+
 int safeword_credential_delete(struct safeword_db *db, long int credential_id)
 {
 	int ret;
