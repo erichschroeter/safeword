@@ -9,15 +9,16 @@
 
 const char db1_path[] = "db1.safeword";
 struct safeword_db *db1;
+char *example1_tags[] = {
+	"email",
+	"gmail",
+};
 struct safeword_credential examples[] = {
 	{
 		.username = "nikolatesla@gmail.com",
 		.password = "My super secret password!!",
 		.description = "Nikola Tesla's Gmail",
-		.tags = {
-			"email",
-			"gmail",
-		},
+		.tags = example1_tags,
 	},
 	{ .username = "mariecurie@outlook.com", .password = "R4|)i04ctiV3", .description = "Marie Curie's Outlook" },
 	{ .username = "einstein", .password = "albert", .description = "Home desktop login" },
@@ -31,6 +32,7 @@ const unsigned int EXAMPLES_SIZE = sizeof(examples) / sizeof(examples[0]);
 #include "tests_safeword_init.h"
 #include "tests_safeword_add.h"
 #include "tests_safeword_remove.h"
+#include "tests_safeword_read.h"
 
 int suite_safeword_init(void)
 {
@@ -91,6 +93,8 @@ static CU_SuiteInfo suites[] = {
 	{ "suite_safeword_add_all",                 suite_safeword_init,     suite_safeword_clean, tests_add_all },
 	{ "suite_safeword_remove_null_db",          NULL,                    NULL,                 tests_remove_null },
 	{ "suite_safeword_remove_one",              suite_safeword_examples, suite_safeword_clean, tests_remove_one },
+	{ "suite_safeword_read_null_db",            NULL,                    NULL,                 tests_read_null },
+	{ "suite_safeword_read_examples",           suite_safeword_examples, suite_safeword_clean, tests_read_examples },
 	CU_SUITE_INFO_NULL,
 };
 
@@ -108,7 +112,6 @@ int main(int argc, char **argv)
 	/*CU_set_error_action(CUEA_IGNORE);*/
 	CU_basic_run_tests();
 
-fail:
 	CU_cleanup_registry();
 	return CU_get_error();
 }

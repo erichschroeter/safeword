@@ -3,6 +3,7 @@ test.c
 tests_safeword_init.c
 tests_safeword_add.c
 tests_safeword_remove.c
+tests_safeword_read.c
 )
 
 # put the executable in the project root directory
