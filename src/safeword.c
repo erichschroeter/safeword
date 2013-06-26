@@ -20,7 +20,6 @@
 
 int safeword_errno = 0;
 static long int _tag_id;
-static int _id;
 static int _copy_once = 0;
 
 char* safeword_strerror(int errnum)
@@ -540,44 +539,50 @@ fail:
 
 /* #region safeword credential functions */
 
-static int id_callback(void* not_used, int argc, char** argv, char** col_name) { _id = atoi(argv[0]); return 0; }
-
 static int map_to_credential(sqlite3* handle, const char* value, const char* table, const char* field,
 	sqlite3_int64 credential_rowid)
 {
 	int ret;
 	char* sql = 0;
+	sqlite3_int64 id = 0; /* set to invalid value */
+	sqlite3_stmt *stmt = NULL;
 
-	_id = 0; // set to invalid value
-
-	sql = calloc(strlen(value) + 100, sizeof(char));
+	sql = calloc(strlen(value) + strlen(table) + strlen(field) + 100, sizeof(char));
 	safeword_check(sql, ESAFEWORD_NOMEM, fail);
 
-	sprintf(sql, "SELECT id FROM %s WHERE %s='%s';", table, field, value);;
-	ret = sqlite3_exec(handle, sql, id_callback, &credential_rowid, 0);
-	free(sql);
+	sprintf(sql, "SELECT id FROM %s WHERE %s = ?;", table, field);;
+	ret = sqlite3_prepare_v2(handle, sql, strlen(sql) + 1, &stmt, NULL);
+	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+	ret = sqlite3_bind_text(stmt, 1, value, strlen(value) + 1, SQLITE_STATIC);
+	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+	ret = sqlite3_step(stmt);
+	if (ret == SQLITE_ROW)
+		id = sqlite3_column_int64(stmt, 0);
+	ret = sqlite3_finalize(stmt);
+	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 
 	/* if the field does not exist create it, so we can map it */
-	if (!_id) {
-		sql = calloc(strlen(value) + 100, sizeof(char));
-		safeword_check(sql, ESAFEWORD_NOMEM, fail);
-
-		sprintf(sql, "INSERT INTO %s (%s) VALUES ('%s');", table, field, value);
-		ret = sqlite3_exec(handle, sql, 0, 0, 0);
-		free(sql);
-		_id = sqlite3_last_insert_rowid(handle);
+	if (!id) {
+		sprintf(sql, "INSERT INTO %s (%s) VALUES (?);", table, field);
+		ret = sqlite3_prepare_v2(handle, sql, strlen(sql) + 1, &stmt, NULL);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_bind_text(stmt, 1, value, strlen(value) + 1, SQLITE_STATIC);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_step(stmt);
+		safeword_check(ret == SQLITE_DONE, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_finalize(stmt);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		id = sqlite3_last_insert_rowid(handle);
 	}
 
-	sql = calloc(strlen(value) + 100, sizeof(char));
-	safeword_check(sql, ESAFEWORD_NOMEM, fail);
-
-	sprintf(sql, "UPDATE credentials SET %sid = %d WHERE id = %d;",
-		field, _id, (int)credential_rowid);
+	sprintf(sql, "UPDATE credentials SET %sid = %d WHERE id = %d;", field, (int) id, (int) credential_rowid);
 	ret = sqlite3_exec(handle, sql, 0, 0, 0);
 	free(sql);
 
+	return 0;
 fail:
-	return ret;
+	free(sql);
+	return -1;
 }
 
 int map_username(sqlite3* handle, const char* username, sqlite3_int64 credential_rowid)
@@ -590,29 +595,28 @@ int map_password(sqlite3* handle, const char* password, sqlite3_int64 credential
 	return map_to_credential(handle, password, "passwords", "password", credential_rowid);
 }
 
-int safeword_credential_add(struct safeword_db *db, int *credential_id,
-	const char *username, const char *password, const char *description)
+int safeword_credential_add(struct safeword_db *db, struct safeword_credential *credential)
 {
 	int ret = 0;
 	char* sql;
 	sqlite3_stmt *stmt = NULL;
 
-	if (!db)
-		return -1;
+	safeword_check(db != NULL, ESAFEWORD_INVARG, fail);
+	safeword_check(credential != NULL, ESAFEWORD_INVARG, fail);
 
 	sql = calloc(100, sizeof(char));
 	sprintf(sql, "INSERT INTO credentials DEFAULT VALUES;");
 	ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
 	free(sql);
-	*credential_id = sqlite3_last_insert_rowid(db->handle);
+	credential->id = sqlite3_last_insert_rowid(db->handle);
 
-	if (description) {
+	if (credential->description) {
 		sql = "UPDATE credentials SET description = ? WHERE id = ?;";
 		ret = sqlite3_prepare_v2(db->handle, sql, strlen(sql) + 1, &stmt, NULL);
 		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
-		ret = sqlite3_bind_int64(stmt, 2, *credential_id);
+		ret = sqlite3_bind_int64(stmt, 2, credential->id);
 		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
-		ret = sqlite3_bind_text(stmt, 1, description, strlen(description) + 1, SQLITE_STATIC);
+		ret = sqlite3_bind_text(stmt, 1, credential->description, strlen(credential->description) + 1, SQLITE_STATIC);
 		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 		ret = sqlite3_step(stmt);
 		safeword_check(ret == SQLITE_DONE, ESAFEWORD_BACKENDSTORAGE, fail);
@@ -620,10 +624,10 @@ int safeword_credential_add(struct safeword_db *db, int *credential_id,
 		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 	}
 
-	if (username)
-		map_username(db->handle, username, *credential_id);
-	if (password)
-		map_password(db->handle, password, *credential_id);
+	if (credential->username)
+		map_username(db->handle, credential->username, credential->id);
+	if (credential->password)
+		map_password(db->handle, credential->password, credential->id);
 
 	return 0;
 fail:

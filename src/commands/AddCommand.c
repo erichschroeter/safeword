@@ -79,8 +79,8 @@ fail_options:
 int addCmd_execute(void)
 {
 	int ret;
-	int credential_id;
 	struct safeword_db db;
+	struct safeword_credential *cred;
 
 	if (!_username) {
 		fprintf(stderr, "no username specified\n");
@@ -96,15 +96,18 @@ int addCmd_execute(void)
 	ret = safeword_open(&db, 0);
 	safeword_check(!ret, ret, fail);
 
-	ret = safeword_credential_add(&db, &credential_id, _username, _password, _description);
-	safeword_check(!ret, ret, fail);
+	cred = safeword_credential_create(_username, _password, _description);
+	if (!cred) goto fail;
+
+	ret = safeword_credential_add(&db, cred);
+	safeword_check(ret == 0, ret, fail);
 
 	if (_tags) {
 		char *tag;
 
 		tag = strtok(_tags, ",");
 		while (tag != NULL) {
-			safeword_credential_tag(&db, credential_id, tag);
+			safeword_credential_tag(&db, cred->id, tag);
 			tag = strtok(NULL, ",");
 		}
 	}

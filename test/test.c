@@ -71,17 +71,16 @@ int suite_safeword_clean(void)
 
 int suite_safeword_examples(void)
 {
-	int ret, id, i, j;
+	int ret, i, j;
 
 	ret = suite_safeword_init();
 	if (ret)
 		return -1;
 
 	for (i = 0; i < EXAMPLES_SIZE; i++) {
-		safeword_credential_add(db1, &id, examples[i].username, examples[i].password, examples[i].description);
-		examples[i].id = id;
+		safeword_credential_add(db1, &examples[i]);
 		for (j = 0; j < examples[i].tags_size; j++)
-			safeword_credential_tag(db1, id, examples[i].tags[j]);
+			safeword_credential_tag(db1, examples[i].id, examples[i].tags[j]);
 	}
 
 	return 0;

@@ -16,30 +16,27 @@ const size_t CREDS_SIZE = sizeof(creds) / sizeof(creds[0]);
 void test_safeword_add_null_db(void)
 {
 	struct safeword_db *null_ptr = 0;
-	int ret, dummy;
+	int ret;
 
-	ret = safeword_credential_add(null_ptr, &dummy, "", "", "");
+	ret = safeword_credential_add(null_ptr, NULL);
 	CU_ASSERT(ret != 0);
 }
 
 void test_safeword_add_username_only(void)
 {
-	int ret, id, i;
+	int ret, i;
 	struct safeword_credential validate;
 
 	for (i = 0; i < CREDS_SIZE; i++) {
 		memset(&validate, 0, sizeof(validate));
 
-		ret = safeword_credential_add(db1, &id, creds[i].username, NULL, NULL);
+		ret = safeword_credential_add(db1, &creds[i]);
 		CU_ASSERT(ret == 0);
 
-		validate.id = id;
-		creds[i].id = id;
+		validate.id = creds[i].id;
 		/* Read the credential just added and verify it is the same as expected. */
 		ret = safeword_credential_read(db1, &validate);
 		CU_ASSERT(ret == 0);
-		/*if (ret)*/
-			/*perror_safeword("");*/
 
 		/* Special check for NULL since CU_ASSERT_STRING_EQUAL segfaults if either is NULL. */
 		if (validate.username && creds[i].username) {
@@ -56,17 +53,16 @@ void test_safeword_add_username_only(void)
 
 void test_safeword_add_password_only(void)
 {
-	int ret, id, i;
+	int ret, i;
 	struct safeword_credential validate;
 
 	for (i = 0; i < CREDS_SIZE; i++) {
 		memset(&validate, 0, sizeof(validate));
 
-		ret = safeword_credential_add(db1, &id, NULL, creds[i].password, NULL);
+		ret = safeword_credential_add(db1, &creds[i]);
 		CU_ASSERT(ret == 0);
 
-		validate.id = id;
-		creds[i].id = id;
+		validate.id = creds[i].id;
 		/* Read the credential just added and verify it is the same as expected. */
 		ret = safeword_credential_read(db1, &validate);
 		CU_ASSERT(ret == 0);
@@ -86,17 +82,16 @@ void test_safeword_add_password_only(void)
 
 void test_safeword_add_description_only(void)
 {
-	int ret, id, i;
+	int ret, i;
 	struct safeword_credential validate;
 
 	for (i = 0; i < CREDS_SIZE; i++) {
 		memset(&validate, 0, sizeof(validate));
 
-		ret = safeword_credential_add(db1, &id, NULL, NULL, creds[i].description);
+		ret = safeword_credential_add(db1, &creds[i]);
 		CU_ASSERT(ret == 0);
 
-		validate.id = id;
-		creds[i].id = id;
+		validate.id = creds[i].id;
 		/* Read the credential just added and verify it is the same as expected. */
 		ret = safeword_credential_read(db1, &validate);
 		CU_ASSERT(ret == 0);
@@ -116,10 +111,10 @@ void test_safeword_add_description_only(void)
 
 void test_safeword_add_all(void)
 {
-	int ret, id, i;
+	int ret, i;
 
 	for (i = 0; i < CREDS_SIZE; i++) {
-		ret = safeword_credential_add(db1, &id, creds[i].username, creds[i].password, creds[i].description);
+		ret = safeword_credential_add(db1, &creds[i]);
 		CU_ASSERT(ret == 0);
 	}
 }
