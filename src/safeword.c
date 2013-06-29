@@ -850,31 +850,85 @@ fail:
 	return ret;
 }
 
-static int print_tag_callback(void* not_used, int argc, char** argv, char** col_name)
+int safeword_list_tags(struct safeword_db *db, unsigned int *tags_size, char ***tags,
+	unsigned int filter_size, const char **filter)
 {
-	printf("%s\n", argv[0]);
-	return 0;
-}
+	int ret = 0, rows = 0, i = 0;
+	char *sql, *sql_count;
+	const char *tag;
+	sqlite3_stmt *stmt = NULL;
 
-int safeword_list_tags(struct safeword_db *db, int credential_id, unsigned int *tags_size, const char ***tags)
-{
-	int ret = 0;
-	char *sql;
+	safeword_check(tags_size != NULL, ESAFEWORD_INVARG, fail);
+	safeword_check(tags != NULL, ESAFEWORD_INVARG, fail);
 
-	sql = calloc(512, sizeof(char));
-	safeword_check(sql, ESAFEWORD_NOMEM, fail);
+	if (filter_size > 0) {
+		safeword_check(filter != NULL, ESAFEWORD_INVARG, fail);
+		int total = 0;
+		/* Get a count of bytes of all tags for SQL prepared statement. */
+		for (i = 0; i < filter_size; i++)
+			total += strlen(filter[i]);
 
-	if (!credential_id) {
-		/* Find all tags */
-		sprintf(sql, "SELECT tag FROM tags;");
+		/* Include enough for the '?' and ',' for the prepared statement. */
+		total += (filter_size * 2);
+
+		sql = calloc(256 + total + 1, sizeof(char));
+		safeword_check(sql != NULL, ESAFEWORD_NOMEM, fail);
+		sprintf(sql, "SELECT tag FROM tags WHERE id IN ("
+		"SELECT tagid FROM tagged_credentials WHERE credentialid IN ("
+		"SELECT c.id FROM credentials AS c INNER JOIN tagged_credentials AS tc INNER JOIN tags AS t"
+		"ON (tc.credentialid = c.id AND tc.tagid = t.id) WHERE t.tag IN (");
+		for (i = 0; i < filter_size; i++) {
+			if (i != 0)
+				sprintf(sql, ",");
+			sprintf(sql, "?");
+		}
+		sprintf(sql, ") GROUP BY c.id HAVING count(c.id) = %d));", filter_size);
+		ret = sqlite3_prepare_v2(db->handle, sql, strlen(sql) + 1, &stmt, NULL);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		for (i = 0; i < filter_size; i++) {
+			ret = sqlite3_bind_text(stmt, i, filter[i], strlen(filter[i]) + 1, SQLITE_STATIC);
+			safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		}
 	} else {
-		/* Find all tags for the specified credential ID */
-		sprintf(sql, "SELECT t.tag FROM tags AS t INNER JOIN tagged_credentials AS c "
-			"ON (c.tagid = t.id) WHERE c.credentialid = %d;", credential_id);
+		sql = "SELECT tag FROM tags;";
+		ret = sqlite3_prepare_v2(db->handle, sql, strlen(sql) + 1, &stmt, NULL);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 	}
-	ret = sqlite3_exec(db->handle, sql, print_tag_callback, 0, 0);
 
-	free(sql);
+	/* Get the number of tags that will be returned so we can allocate memory for them. */
+	sql_count = calloc(strlen(sql) + 1, sizeof(char));
+	sprintf(sql_count, "SELECT count(*) FROM %s", sql);
+
+	ret = sqlite3_prepare_v2(db->handle, sql, strlen(sql) + 1, &stmt, NULL);
+	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+	ret = sqlite3_step(stmt);
+	if (ret == SQLITE_ROW)
+		rows = sqlite3_column_int(stmt, 0);
+	ret = sqlite3_finalize(stmt);
+	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+
+	*tags_size = rows;
+
+	/* If we have any tags, create an array and copy them. */
+	if (*tags_size > 0) {
+		*tags = calloc(*tags_size, sizeof(char*));
+		safeword_check(*tags != NULL, ESAFEWORD_NOMEM, fail);
+
+		i = 0; /* reset */
+		do {
+			ret = sqlite3_step(stmt);
+			if (ret == SQLITE_ROW) {
+				tag = (const char*) sqlite3_column_text(stmt, 0);
+				if (!tag) continue;
+				*tags[i] = calloc(strlen(tag) + 1, sizeof(char));
+				if (!(*tags[i])) continue;
+				strcpy(*tags[i], tag);
+				i++;
+			}
+		} while (ret == SQLITE_ROW);
+		ret = sqlite3_finalize(stmt);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+	}
 fail:
 	return ret;
 }

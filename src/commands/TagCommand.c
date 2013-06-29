@@ -287,17 +287,30 @@ int tagCmd_execute(void)
 	safeword_check(!ret, ret, fail);
 
 	if (_subcommand.execute == &delete_tags ||
+	/* Delete the specified tags. */
 		_subcommand.execute == &rename_tag) {
 		_subcommand.execute(&db, _tags);
 	} else if (_subcommand.execute == &update_tag) {
+	/* Update the tag info. */
 		struct update_info info;
 		info.tag = _tags->data[0];
 		info.file = _wiki_file;
 		_subcommand.execute(&db, &info);
 	} else if (_tags && _credential_ids) {
 		if (_tags->size < 1) {
-			safeword_list_tags(&db, _credential_ids[0], 0, 0);
+	/* Print the tags associated with the specified credentials. */
+			for (i = 0; i < _credential_ids_size; i++) {
+				struct safeword_credential cred;
+				cred.id = _credential_ids[i];
+				ret = safeword_credential_read(&db, &cred);
+				safeword_check(ret == 0, safeword_errno, fail);
+				/*
+				 * TODO implement Set utility class/module in order to add all tags
+				 * from all credentials omitting duplicates.
+				 */
+			}
 		} else {
+	/* Tag/untag the specified credentials with the specified tags. */
 			for (i = 0; i < _credential_ids_size; i++) {
 				for (j = 0; j < _tags->size; j++) {
 					if (_untag)
@@ -308,7 +321,10 @@ int tagCmd_execute(void)
 			}
 		}
 	} else {
-		safeword_list_tags(&db, 0, 0, 0);
+	/* List all known tags. */
+		char **tags;
+		unsigned int tags_size;
+		safeword_list_tags(&db, &tags_size, &tags, 0, 0);
 	}
 
 fail:
