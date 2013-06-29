@@ -871,23 +871,23 @@ int safeword_list_tags(struct safeword_db *db, unsigned int *tags_size, char ***
 		/* Include enough for the '?' and ',' for the prepared statement. */
 		total += (filter_size * 2);
 
-		sql = calloc(256 + total + 1, sizeof(char));
+		sql = calloc(512 + total + 1, sizeof(char));
 		safeword_check(sql != NULL, ESAFEWORD_NOMEM, fail);
-		sprintf(sql, "SELECT count(*) FROM SELECT tag FROM tags WHERE id IN ("
+		sprintf(sql, "SELECT count(*) FROM (SELECT tag FROM tags WHERE id IN ("
 		"SELECT tagid FROM tagged_credentials WHERE credentialid IN ("
-		"SELECT c.id FROM credentials AS c INNER JOIN tagged_credentials AS tc INNER JOIN tags AS t"
+		"SELECT c.id FROM credentials AS c INNER JOIN tagged_credentials AS tc INNER JOIN tags AS t "
 		"ON (tc.credentialid = c.id AND tc.tagid = t.id) WHERE t.tag IN (");
 		for (i = 0; i < filter_size; i++) {
 			if (i != 0)
-				sprintf(sql, ",");
-			sprintf(sql, "?");
+				strcat(sql, ",");
+			strcat(sql, "?");
 		}
-		sprintf(sql, ") GROUP BY c.id HAVING count(c.id) = %d));", filter_size);
+		sprintf(sql + strlen(sql), ") GROUP BY c.id HAVING count(c.id) = %d)));", filter_size);
 
 		ret = sqlite3_prepare_v2(db->handle, sql, strlen(sql) + 1, &stmt, NULL);
 		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 		for (i = 0; i < filter_size; i++) {
-			ret = sqlite3_bind_text(stmt, i, filter[i], strlen(filter[i]) + 1, SQLITE_STATIC);
+			ret = sqlite3_bind_text(stmt, i + 1, filter[i], strlen(filter[i]), SQLITE_STATIC);
 			safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 		}
 	} else {
@@ -915,23 +915,23 @@ int safeword_list_tags(struct safeword_db *db, unsigned int *tags_size, char ***
 		/* Include enough for the '?' and ',' for the prepared statement. */
 		total += (filter_size * 2);
 
-		sql = calloc(256 + total + 1, sizeof(char));
-		safeword_check(sql != NULL, ESAFEWORD_NOMEM, fail);
+		/*sql = calloc(512 + total + 1, sizeof(char));*/
+		/*safeword_check(sql != NULL, ESAFEWORD_NOMEM, fail);*/
 		sprintf(sql, "SELECT tag FROM tags WHERE id IN ("
 		"SELECT tagid FROM tagged_credentials WHERE credentialid IN ("
-		"SELECT c.id FROM credentials AS c INNER JOIN tagged_credentials AS tc INNER JOIN tags AS t"
+		"SELECT c.id FROM credentials AS c INNER JOIN tagged_credentials AS tc INNER JOIN tags AS t "
 		"ON (tc.credentialid = c.id AND tc.tagid = t.id) WHERE t.tag IN (");
 		for (i = 0; i < filter_size; i++) {
 			if (i != 0)
-				sprintf(sql, ",");
-			sprintf(sql, "?");
+				strcat(sql, ",");
+			strcat(sql, "?");
 		}
-		sprintf(sql, ") GROUP BY c.id HAVING count(c.id) = %d));", filter_size);
+		sprintf(sql + strlen(sql), ") GROUP BY c.id HAVING count(c.id) = %d));", filter_size);
 
 		ret = sqlite3_prepare_v2(db->handle, sql, strlen(sql) + 1, &stmt, NULL);
 		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 		for (i = 0; i < filter_size; i++) {
-			ret = sqlite3_bind_text(stmt, i, filter[i], strlen(filter[i]) + 1, SQLITE_STATIC);
+			ret = sqlite3_bind_text(stmt, i + 1, filter[i], strlen(filter[i]), SQLITE_STATIC);
 			safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 		}
 	} else {
@@ -957,9 +957,9 @@ int safeword_list_tags(struct safeword_db *db, unsigned int *tags_size, char ***
 				i++;
 			}
 		} while (ret == SQLITE_ROW);
-		ret = sqlite3_finalize(stmt);
-		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 	}
+	ret = sqlite3_finalize(stmt);
+	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 	return 0;
 fail:
 	/* TODO free sql variable */
