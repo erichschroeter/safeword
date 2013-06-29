@@ -854,7 +854,7 @@ int safeword_list_tags(struct safeword_db *db, unsigned int *tags_size, char ***
 	unsigned int filter_size, const char **filter)
 {
 	int ret = 0, rows = 0, i = 0;
-	char *sql, *sql_count;
+	char *sql;
 	const char *tag;
 	sqlite3_stmt *stmt = NULL;
 
@@ -863,6 +863,50 @@ int safeword_list_tags(struct safeword_db *db, unsigned int *tags_size, char ***
 
 	if (filter_size > 0) {
 		safeword_check(filter != NULL, ESAFEWORD_INVARG, fail);
+		int total = 0;
+		/* Get a count of bytes of all tags for SQL prepared statement. */
+		for (i = 0; i < filter_size; i++)
+			total += strlen(filter[i]);
+
+		/* Include enough for the '?' and ',' for the prepared statement. */
+		total += (filter_size * 2);
+
+		sql = calloc(256 + total + 1, sizeof(char));
+		safeword_check(sql != NULL, ESAFEWORD_NOMEM, fail);
+		sprintf(sql, "SELECT count(*) FROM SELECT tag FROM tags WHERE id IN ("
+		"SELECT tagid FROM tagged_credentials WHERE credentialid IN ("
+		"SELECT c.id FROM credentials AS c INNER JOIN tagged_credentials AS tc INNER JOIN tags AS t"
+		"ON (tc.credentialid = c.id AND tc.tagid = t.id) WHERE t.tag IN (");
+		for (i = 0; i < filter_size; i++) {
+			if (i != 0)
+				sprintf(sql, ",");
+			sprintf(sql, "?");
+		}
+		sprintf(sql, ") GROUP BY c.id HAVING count(c.id) = %d));", filter_size);
+
+		ret = sqlite3_prepare_v2(db->handle, sql, strlen(sql) + 1, &stmt, NULL);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		for (i = 0; i < filter_size; i++) {
+			ret = sqlite3_bind_text(stmt, i, filter[i], strlen(filter[i]) + 1, SQLITE_STATIC);
+			safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		}
+	} else {
+		sql = "SELECT count(*) FROM (SELECT tag FROM tags);";
+		ret = sqlite3_prepare_v2(db->handle, sql, strlen(sql) + 1, &stmt, NULL);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+	}
+
+	/* Get the number of tags that will be returned so we can allocate memory for them. */
+	ret = sqlite3_step(stmt);
+	if (ret == SQLITE_ROW)
+		rows = sqlite3_column_int(stmt, 0);
+	ret = sqlite3_finalize(stmt);
+	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+
+	*tags_size = rows;
+
+	/* Now bind the tags to the prepared statement. */
+	if (filter_size > 0) {
 		int total = 0;
 		/* Get a count of bytes of all tags for SQL prepared statement. */
 		for (i = 0; i < filter_size; i++)
@@ -883,6 +927,7 @@ int safeword_list_tags(struct safeword_db *db, unsigned int *tags_size, char ***
 			sprintf(sql, "?");
 		}
 		sprintf(sql, ") GROUP BY c.id HAVING count(c.id) = %d));", filter_size);
+
 		ret = sqlite3_prepare_v2(db->handle, sql, strlen(sql) + 1, &stmt, NULL);
 		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 		for (i = 0; i < filter_size; i++) {
@@ -895,20 +940,6 @@ int safeword_list_tags(struct safeword_db *db, unsigned int *tags_size, char ***
 		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 	}
 
-	/* Get the number of tags that will be returned so we can allocate memory for them. */
-	sql_count = calloc(strlen(sql) + 1, sizeof(char));
-	sprintf(sql_count, "SELECT count(*) FROM %s", sql);
-
-	ret = sqlite3_prepare_v2(db->handle, sql, strlen(sql) + 1, &stmt, NULL);
-	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
-	ret = sqlite3_step(stmt);
-	if (ret == SQLITE_ROW)
-		rows = sqlite3_column_int(stmt, 0);
-	ret = sqlite3_finalize(stmt);
-	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
-
-	*tags_size = rows;
-
 	/* If we have any tags, create an array and copy them. */
 	if (*tags_size > 0) {
 		*tags = calloc(*tags_size, sizeof(char*));
@@ -920,9 +951,9 @@ int safeword_list_tags(struct safeword_db *db, unsigned int *tags_size, char ***
 			if (ret == SQLITE_ROW) {
 				tag = (const char*) sqlite3_column_text(stmt, 0);
 				if (!tag) continue;
-				*tags[i] = calloc(strlen(tag) + 1, sizeof(char));
-				if (!(*tags[i])) continue;
-				strcpy(*tags[i], tag);
+				(*tags)[i] = calloc(strlen(tag) + 1, sizeof(char));
+				if (!((*tags)[i])) continue;
+				strcpy((*tags)[i], tag);
 				i++;
 			}
 		} while (ret == SQLITE_ROW);
@@ -930,6 +961,7 @@ int safeword_list_tags(struct safeword_db *db, unsigned int *tags_size, char ***
 		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 	}
 fail:
+	/* TODO free sql variable */
 	return ret;
 }
 

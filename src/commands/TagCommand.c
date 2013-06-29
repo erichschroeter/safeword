@@ -325,6 +325,8 @@ int tagCmd_execute(void)
 		char **tags;
 		unsigned int tags_size;
 		safeword_list_tags(&db, &tags_size, &tags, 0, 0);
+		for (i = 0; i < tags_size; i++)
+			printf("%s\n", tags[i]);
 	}
 
 fail:
