@@ -960,9 +960,10 @@ int safeword_list_tags(struct safeword_db *db, unsigned int *tags_size, char ***
 		ret = sqlite3_finalize(stmt);
 		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 	}
+	return 0;
 fail:
 	/* TODO free sql variable */
-	return ret;
+	return -1;
 }
 
 int safeword_tag_delete(struct safeword_db *db, const char *tag)
