@@ -42,6 +42,7 @@ int infoCmd_execute(void)
 	int ret;
 	struct safeword_db db;
 	struct safeword_credential credential;
+	struct safeword_tag tag;
 
 	ret = safeword_open(&db, 0);
 	safeword_check(!ret, ret, fail);
@@ -55,7 +56,12 @@ int infoCmd_execute(void)
 			"PASSWORD   : %s\n",
 			credential.description, credential.username, credential.password);
 	} else {
-		ret = safeword_tag_info(&db, _tag);
+		memset(&tag, 0, sizeof(tag));
+		tag.tag = _tag;
+		ret = safeword_tag_read(&db, &tag);
+		if (tag.wiki)
+			printf("%s\n", tag.wiki);
+
 	}
 
 fail:

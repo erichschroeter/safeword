@@ -505,34 +505,37 @@ int safeword_credential_free(struct safeword_credential *credential)
 	return 0;
 }
 
-static int tag_info_callback(void* not_used, int argc, char** argv, char** col_name)
-{
-	if (argc < 1)
-		return -1;
-
-	printf("TAG:\t%s\n", argv[0]);
-
-	return 0;
-}
-
-int safeword_tag_info(struct safeword_db *db, const char *tag)
+int safeword_tag_read(struct safeword_db *db, struct safeword_tag *tag)
 {
 	int ret;
-	char* sql = 0;
+	char *sql;
+	sqlite3_stmt *stmt = NULL;
 
-	/* TODO print the wiki/markdown text for the specified tag */
-	/* TODO print the number of mapped credentials for the specified tag */
-	sql = calloc(256, sizeof(char));
-	safeword_check(sql, ESAFEWORD_NOMEM, fail);
+	safeword_check(db != NULL, ESAFEWORD_INVARG, fail);
+	safeword_check(tag != NULL, ESAFEWORD_INVARG, fail);
+	safeword_check(tag->tag != NULL, ESAFEWORD_INVARG, fail);
 
-	sprintf(sql, "SELECT tag FROM tags "
-		"WHERE tag = '%s';", tag);
-	ret = sqlite3_exec(db->handle, sql, tag_info_callback, 0, 0);
-	safeword_check(ret == 0, ESAFEWORD_BACKENDSTORAGE, fail);
+	sql = "SELECT wiki FROM tags WHERE tag = ?;";
+	ret = sqlite3_prepare_v2(db->handle, sql, strlen(sql) + 1, &stmt, NULL);
+	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+	ret = sqlite3_bind_text(stmt, 1, tag->tag, strlen(tag->tag), SQLITE_STATIC);
+	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+	ret = sqlite3_step(stmt);
+	if (ret == SQLITE_ROW) {
+		const char *col = (const char*) sqlite3_column_text(stmt, 0);
+		if (col) {
+			tag->wiki = calloc(strlen(col) + 1, sizeof(char));
+			if (tag->wiki) {
+				strcpy(tag->wiki, col);
+			}
+		}
+	}
+	ret = sqlite3_finalize(stmt);
+	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 
+	return 0;
 fail:
-	free(sql);
-	return ret;
+	return -1;
 }
 
 /* #endregion safeword info functions */

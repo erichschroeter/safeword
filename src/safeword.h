@@ -29,6 +29,11 @@ struct safeword_db {
 	sqlite3 *handle;
 };
 
+struct safeword_tag {
+	char *tag;
+	char *wiki;
+};
+
 struct safeword_credential {
 	int  id;
 	char *username;
@@ -52,7 +57,7 @@ int safeword_credential_delete(struct safeword_db *db, long int credential_id);
 int safeword_credential_free(struct safeword_credential *credential);
 int safeword_credential_tag(struct safeword_db *db, long int credential_id, const char *tag);
 int safeword_credential_untag(struct safeword_db *db, long int credential_id, const char *tag);
-int safeword_tag_info(struct safeword_db *db, const char *tag);
+int safeword_tag_read(struct safeword_db *db, struct safeword_tag *tag);
 int safeword_tag_update(struct safeword_db *db, const char *tag, const char *wiki);
 int safeword_tag_delete(struct safeword_db *db, const char *tag);
 int safeword_tag_rename(struct safeword_db *db, const char *old, const char *new);
