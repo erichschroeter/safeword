@@ -3,6 +3,7 @@
 
 #include <CUnit/Basic.h>
 
+int suite_safeword_list_init(void);
 void test_safeword_list_null_db(void);
 void test_safeword_list_tags_all(void);
 void test_safeword_list_tags_filter(void);

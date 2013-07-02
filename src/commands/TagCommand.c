@@ -36,7 +36,7 @@ static struct array *_tags;
 char* tagCmd_help(void)
 {
 	return "SYNOPSIS\n"
-"	tag [-d | --delete] [-f | --force] [-m | --move] [-w | --wiki] [ID] TAGS ...\n"
+"	tag [-d | --delete] [-f | --force] [-m | --move] [-w | --wiki] [ID1,ID2,...] TAGS ...\n"
 "\n"
 "DESCRIPTION\n"
 "	This command serves multiple purposes dealing with tags within the safeword database. Without any\n"
@@ -287,8 +287,8 @@ int tagCmd_execute(void)
 	safeword_check(!ret, ret, fail);
 
 	if (_subcommand.execute == &delete_tags ||
-	/* Delete the specified tags. */
 		_subcommand.execute == &rename_tag) {
+	/* Delete the specified tags. */
 		_subcommand.execute(&db, _tags);
 	} else if (_subcommand.execute == &update_tag) {
 	/* Update the tag info. */
