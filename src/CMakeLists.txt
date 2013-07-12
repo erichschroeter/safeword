@@ -7,7 +7,7 @@ commands/RemoveCommand.c
 commands/ListCommand.c
 commands/TagCommand.c
 commands/CopyCommand.c
-commands/InfoCommand.c
+commands/ShowCommand.c
 commands/EditCommand.c
 )
 add_library(commands ${COMMAND_SRCS})

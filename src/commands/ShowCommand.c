@@ -3,22 +3,22 @@
 #include <string.h>
 
 #include <safeword.h>
-#include "InfoCommand.h"
+#include "ShowCommand.h"
 
 static int _credential_id;
 static char* _tag;
 
-char* infoCmd_help(void)
+char* showCmd_help(void)
 {
 	return "SYNOPSIS\n"
-"	info [ID | tag]\n"
+"	show [ID | tag]\n"
 "\n"
 "DESCRIPTION\n"
 "	This command displays information about a credential or tag in the safeword database.\n"
 "\n";
 }
 
-int infoCmd_parse(int argc, char** argv)
+int showCmd_parse(int argc, char** argv)
 {
 	int ret = 0;
 	char *invalid = 0;
@@ -37,7 +37,7 @@ int infoCmd_parse(int argc, char** argv)
 	return ret;
 }
 
-int infoCmd_execute(void)
+int showCmd_execute(void)
 {
 	int ret;
 	struct safeword_db db;
