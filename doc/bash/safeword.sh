@@ -37,7 +37,8 @@ _safeword()
 		case "${prev}" in
 		tag | --untag | -u)
 			local credentials=$( safeword ls --all | cut -d' ' -f1 )
-			COMPREPLY=( $(compgen -W "${credentials} ${opts}" -- ${cur}) )
+			local tags=$( safeword tag )
+			COMPREPLY=( $(compgen -W "${tags} ${credentials} ${opts}" -- ${cur}) )
 			;;
 		--wiki | -w)
 			COMPREPLY=( $(compgen -f -d  -W "-" -- ${cur}) )
