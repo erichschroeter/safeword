@@ -440,10 +440,13 @@ int safeword_credential_read(struct safeword_db *db, struct safeword_credential 
 	/* Find all tags for the specified credential ID */
 	credential->tags_size = 0;
 	credential->tags = 0;
+
 	sprintf(sql, "SELECT count(*) FROM (SELECT t.tag FROM tags AS t INNER JOIN tagged_credentials AS tc "
 		"ON (tc.tagid = t.id) WHERE tc.credentialid = %d);", credential->id);
 	ret = sqlite3_exec(db->handle, sql, &credential_get_tags_size_callback, credential, 0);
 	safeword_check(ret == 0, ESAFEWORD_BACKENDSTORAGE, fail_sql);
+
+	if (credential->tags_size == 0) goto skip_tags;
 
 	credential->tags = calloc(credential->tags_size, sizeof(char*));
 	safeword_check(credential->tags != 0, ESAFEWORD_NOMEM, fail_sql);
@@ -475,6 +478,7 @@ int safeword_credential_read(struct safeword_db *db, struct safeword_credential 
 	safeword_check(ret == SQLITE_DONE, ESAFEWORD_BACKENDSTORAGE, fail);
 	ret = sqlite3_finalize(stmt);
 	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+skip_tags:
 
 	free(sql);
 	return 0;
