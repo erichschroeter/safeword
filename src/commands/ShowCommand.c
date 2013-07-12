@@ -44,6 +44,9 @@ int showCmd_execute(void)
 	struct safeword_credential credential;
 	struct safeword_tag tag;
 
+	memset(&tag, 0, sizeof(tag));
+	memset(&credential, 0, sizeof(credential));
+
 	ret = safeword_open(&db, 0);
 	safeword_check(!ret, ret, fail);
 
