@@ -39,7 +39,7 @@ int showCmd_parse(int argc, char** argv)
 
 int showCmd_execute(void)
 {
-	int ret;
+	int i, ret;
 	struct safeword_db db;
 	struct safeword_credential credential;
 	struct safeword_tag tag;
@@ -53,11 +53,14 @@ int showCmd_execute(void)
 	if (_credential_id) {
 		credential.id = _credential_id;
 		ret = safeword_credential_read(&db, &credential);
-		fprintf(stdout,
-			"DESCRIPTION: %s\n"
-			"USERNAME   : %s\n"
-			"PASSWORD   : %s\n",
+		printf("%s\nusername:%s\npassword:%s\n",
 			credential.description, credential.username, credential.password);
+		for (i = 0; i < credential.tags_size; i++) {
+			if (i != 0)
+				printf(", ");
+			printf("%s", credential.tags[i]);
+		}
+		if (credential.tags_size) printf("\n");
 	} else {
 		memset(&tag, 0, sizeof(tag));
 		tag.tag = _tag;
