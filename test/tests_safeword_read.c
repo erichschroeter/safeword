@@ -32,8 +32,7 @@ void test_safeword_read_invalid_id(void)
 	memset(&credential, 0, sizeof(credential));
 
 	ret = safeword_credential_read(db1, &credential);
-	CU_ASSERT(ret != 0);
-	CU_ASSERT(safeword_errno != ESAFEWORD_INVARG);
+	CU_ASSERT(ret == 0);
 
 	/* Ensure nothing was modified in credential passed in. */
 	CU_ASSERT(credential.id == 0);
@@ -57,8 +56,6 @@ void test_safeword_read_examples(void)
 
 		ret = safeword_credential_read(db1, &credential);
 		CU_ASSERT(ret == 0);
-/*printf("\n%s\n", safeword_credential_tostring(&credential));*/
-/*printf("%s\n", safeword_credential_tostring(&examples[i]));*/
 
 		/* Ensure nothing was modified in credential passed in. */
 		CU_ASSERT(credential.id == examples[i].id);
@@ -78,8 +75,9 @@ void test_safeword_read_examples(void)
 		} else
 			CU_ASSERT_STRING_EQUAL(credential.description, examples[i].description);
 		CU_ASSERT(credential.tags_size == examples[i].tags_size);
-		for (j = 0; j < examples[i].tags_size; j++)
+		for (j = 0; j < examples[i].tags_size; j++) {
 			CU_ASSERT_STRING_EQUAL(credential.tags[j], examples[i].tags[j]);
+		}
 	}
 }
 

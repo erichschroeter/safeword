@@ -317,10 +317,10 @@ fail:
 	return NULL;
 }
 
-static int credential_exists_callback(void* credential_id, int argc, char** argv, char** columns)
+static int credential_exists_callback(void* existsptr, int argc, char** argv, char** columns)
 {
-	int *id = (int*) credential_id;
-	*id = 1;
+	int *exists = (int*) existsptr;
+	*exists = 1;
 	return 0;
 }
 
@@ -328,6 +328,9 @@ int safeword_credential_exists(struct safeword_db *db, long int credential_id)
 {
 	int ret, exists = 0;
 	char* sql;
+
+	/* Credential ids are only positive. */
+	if (credential_id < 0) return 0;
 
 	safeword_check(db != NULL, ESAFEWORD_INVARG, fail);
 
@@ -344,7 +347,7 @@ int safeword_credential_exists(struct safeword_db *db, long int credential_id)
 fail_sql:
 	free(sql);
 fail:
-	return -1;
+	return 0;
 }
 
 static int credential_get_tags_size_callback(void* cred, int argc, char** argv, char** columns)
@@ -399,10 +402,9 @@ int safeword_credential_read(struct safeword_db *db, struct safeword_credential 
 	int ret, i = 0;
 	char* sql;
 
+	safeword_check(db != NULL, ESAFEWORD_INVARG, fail);
 	ret = safeword_credential_exists(db, credential->id);
-	if (ret == -1)
-		goto fail; /* keep existing errno from previous call. */
-	safeword_check(ret == 1, ESAFEWORD_NOCREDENTIAL, fail);
+	safeword_check(ret == 1, ESAFEWORD_NOCREDENTIAL, nocredential);
 
 	sql = calloc(256, sizeof(char));
 	safeword_check(sql, ESAFEWORD_NOMEM, fail);
@@ -475,6 +477,8 @@ int safeword_credential_read(struct safeword_db *db, struct safeword_credential 
 	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 
 	free(sql);
+	return 0;
+nocredential:
 	return 0;
 fail_tag:
 	for (; i > 0; i--)
