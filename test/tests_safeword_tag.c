@@ -15,31 +15,34 @@ void test_safeword_tag_null_db(void)
 void test_safeword_tag_credential(void)
 {
 	int i, ret;
-	struct safeword_credential tesla;
+	struct safeword_credential *example = safeword_credential_create(
+		"myusername", "Exr3meLY Har|) T0 Gu355!", "Example.com account");
+	CU_ASSERT_PTR_NOT_NULL(example);
 
-	memset(&tesla, 0, sizeof(tesla));
+	ret = safeword_credential_add(db1, example);
+	CU_ASSERT(ret == 0);
 
 	/* Verify there are no tags for a clean test. */
-	ret = safeword_credential_read(db1, &tesla);
+	ret = safeword_credential_read(db1, example);
 	CU_ASSERT(ret == 0);
-	CU_ASSERT(tesla.tags_size == 0);
-	CU_ASSERT(tesla.tags == NULL);
+	CU_ASSERT(example->tags_size == 0);
+	CU_ASSERT(example->tags == NULL);
 
 	/* Tag Tesla as genius and inventor. */
-	ret = safeword_credential_tag(db1, 1, "genius");
+	ret = safeword_credential_tag(db1, 1, "www");
 	CU_ASSERT(ret == 0);
-	ret = safeword_credential_tag(db1, 1, "inventor");
-	CU_ASSERT(ret == 0);
-
-	/* Verify he has the tags. */
-	ret = safeword_credential_read(db1, &tesla);
+	ret = safeword_credential_tag(db1, 1, "example.com");
 	CU_ASSERT(ret == 0);
 
-	for (i = 0; i < tesla.tags_size; i++) {
-		if (!strcmp(tesla.tags[i], "genius") || !strcmp(tesla.tags[i], "inventor")) {
-			/* Tesla should be tagged with ONLY genius and inventor. */
+	/* Verify it has the tags. */
+	ret = safeword_credential_read(db1, example);
+	CU_ASSERT(ret == 0);
+
+	for (i = 0; i < example->tags_size; i++) {
+		if (!strcmp(example->tags[i], "www") || !strcmp(example->tags[i], "example.com")) {
+			/* Should be tagged with ONLY www and example.com. */
 		} else {
-			CU_FAIL("Tesla is tagged with something he shouldn't be.");
+			CU_FAIL("example is tagged with something it shouldn't be.");
 		}
 	}
 }
