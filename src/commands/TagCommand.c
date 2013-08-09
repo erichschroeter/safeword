@@ -13,6 +13,7 @@
 static int _force = 0;
 static int _untag = 0;
 static FILE *_wiki_file;
+static int _filter = 0;
 
 struct array {
 	unsigned int size;
@@ -178,18 +179,19 @@ fail:
 
 int tagCmd_parse(int argc, char** argv)
 {
-	int ret = 0, remaining_args = 0, i;
+	int ret = 0, remaining_args = 0, i, option_index = 0;
 	struct option long_options[] = {
 		{"delete", no_argument,       NULL, 'd'},
 		{"force",  no_argument,       NULL, 'f'},
 		{"move",   no_argument,       NULL, 'm'},
 		{"wiki",   required_argument, NULL, 'w'},
 		{"untag",  no_argument,       NULL, 'u'},
+		{"filter", no_argument,       0,     0},
 	};
 
 	_subcommand.execute = NULL;
 
-	while ((i = getopt_long(argc, argv, "w:dfmu", long_options, 0)) != -1) {
+	while ((i = getopt_long(argc, argv, "w:dfmu", long_options, &option_index)) != -1) {
 		switch (i) {
 		case 'd':
 			safeword_check(!_subcommand.execute, -ESAFEWORD_STATE, fail);
@@ -214,13 +216,18 @@ int tagCmd_parse(int argc, char** argv)
 		case 'u':
 			_untag = 1;
 			break;
+		case 0:
+			if (!strcmp(long_options[option_index].name, "filter")) {
+				_filter = 1;
+			}
+			break;
 		}
 	}
 
 	remaining_args = argc - optind;
 
 	/* START of parsing credential ids */
-	if (!_subcommand.execute && remaining_args > 0) {
+	if (!_subcommand.execute && remaining_args > 0 && !_filter) {
 		int i = 0, id;
 		char *id_str, *ids_backup, **tags;
 
@@ -296,6 +303,16 @@ int tagCmd_execute(void)
 		info.tag = _tags->data[0];
 		info.file = _wiki_file;
 		_subcommand.execute(&db, &info);
+	} else if (_tags && _filter) {
+		char **tags;
+		unsigned int tags_size;
+
+		if (_tags->size > 0) {
+			safeword_list_tags(&db, &tags_size, &tags, (unsigned int) _tags->size, (const char**) _tags->data);
+
+			for (i = 0; i < tags_size; i++)
+				printf("%s\n", tags[i]);
+		}
 	} else if (_tags && _credential_ids) {
 		if (_tags->size < 1) {
 	/* Print the tags associated with the specified credentials. */
@@ -324,7 +341,9 @@ int tagCmd_execute(void)
 	/* List all known tags. */
 		char **tags;
 		unsigned int tags_size;
+
 		safeword_list_tags(&db, &tags_size, &tags, 0, 0);
+
 		for (i = 0; i < tags_size; i++)
 			printf("%s\n", tags[i]);
 	}
