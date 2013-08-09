@@ -102,7 +102,8 @@ static CU_SuiteInfo suites[] = {
 	{ "suite_safeword_list_null",            NULL,                     NULL,                 tests_list_null },
 	{ "suite_safeword_list_tags",            suite_safeword_list_init, suite_safeword_clean, tests_list_tags },
 	{ "suite_safeword_tag_null",             NULL,                     NULL,                 tests_tag_null },
-	{ "suite_safeword_tag_tags",             suite_safeword_init,      suite_safeword_clean, tests_tags },
+	{ "suite_safeword_tag_credential",       suite_safeword_init,      suite_safeword_clean, tests_tag_credential },
+	{ "suite_safeword_tag_filter",           suite_safeword_init,      suite_safeword_clean, tests_tag_filter },
 	CU_SUITE_INFO_NULL,
 };
 
