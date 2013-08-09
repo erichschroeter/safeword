@@ -880,7 +880,7 @@ int safeword_list_tags(struct safeword_db *db, unsigned int *tags_size, char ***
 			total += strlen(filter[i]);
 
 		/* Include enough for the '?' and ',' for the prepared statement. */
-		total += (filter_size * 2);
+		total += (filter_size * 4);
 
 		sql = calloc(512 + total + 1, sizeof(char));
 		safeword_check(sql != NULL, ESAFEWORD_NOMEM, fail);
@@ -893,12 +893,24 @@ int safeword_list_tags(struct safeword_db *db, unsigned int *tags_size, char ***
 				strcat(sql, ",");
 			strcat(sql, "?");
 		}
-		sprintf(sql + strlen(sql), ") GROUP BY c.id HAVING count(c.id) = %d)));", filter_size);
+		sprintf(sql + strlen(sql),
+		") GROUP BY c.id HAVING count(c.id) = %d)) "
+		"EXCEPT SELECT tag FROM tags WHERE tag IN (", filter_size);
+		for (i = 0; i < filter_size; i++) {
+			if (i != 0)
+				strcat(sql, ",");
+			strcat(sql, "?");
+		}
+		sprintf(sql + strlen(sql), "));");
 
 		ret = sqlite3_prepare_v2(db->handle, sql, strlen(sql) + 1, &stmt, NULL);
 		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 		for (i = 0; i < filter_size; i++) {
 			ret = sqlite3_bind_text(stmt, i + 1, filter[i], strlen(filter[i]), SQLITE_STATIC);
+			safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		}
+		for (i = 0; i < filter_size; i++) {
+			ret = sqlite3_bind_text(stmt, i + filter_size + 1, filter[i], strlen(filter[i]), SQLITE_STATIC);
 			safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 		}
 	} else {
@@ -924,7 +936,7 @@ int safeword_list_tags(struct safeword_db *db, unsigned int *tags_size, char ***
 			total += strlen(filter[i]);
 
 		/* Include enough for the '?' and ',' for the prepared statement. */
-		total += (filter_size * 2);
+		total += (filter_size * 4);
 
 		/*sql = calloc(512 + total + 1, sizeof(char));*/
 		/*safeword_check(sql != NULL, ESAFEWORD_NOMEM, fail);*/
@@ -937,12 +949,24 @@ int safeword_list_tags(struct safeword_db *db, unsigned int *tags_size, char ***
 				strcat(sql, ",");
 			strcat(sql, "?");
 		}
-		sprintf(sql + strlen(sql), ") GROUP BY c.id HAVING count(c.id) = %d));", filter_size);
+		sprintf(sql + strlen(sql),
+		") GROUP BY c.id HAVING count(c.id) = %d)) "
+		"EXCEPT SELECT tag FROM tags WHERE tag IN (", filter_size);
+		for (i = 0; i < filter_size; i++) {
+			if (i != 0)
+				strcat(sql, ",");
+			strcat(sql, "?");
+		}
+		sprintf(sql + strlen(sql),  ");");
 
 		ret = sqlite3_prepare_v2(db->handle, sql, strlen(sql) + 1, &stmt, NULL);
 		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 		for (i = 0; i < filter_size; i++) {
 			ret = sqlite3_bind_text(stmt, i + 1, filter[i], strlen(filter[i]), SQLITE_STATIC);
+			safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		}
+		for (i = 0; i < filter_size; i++) {
+			ret = sqlite3_bind_text(stmt, i + filter_size + 1, filter[i], strlen(filter[i]), SQLITE_STATIC);
 			safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 		}
 	} else {
