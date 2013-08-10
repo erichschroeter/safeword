@@ -1,0 +1,63 @@
+safeword-tag(1)
+================
+
+NAME
+----
+safeword-tag - Tag a credential and modify a tag
+
+SYNOPSIS
+--------
+[verse]
+'safeword tag' [--delete | -d] [--force | -f] [--move | -m <old>]
+	[--wiki | -w <file>] [--untag | -u] [<id>,...] <tag> ...
+
+DESCRIPTION
+-----------
+This command serves multiple purposes dealing with tags within a Safeword
+database. Without any arguments it lists all tags within the database. If the
+first positional argument is a credential identifier(s) the remaining arguments
+will be mapped to the credential(s). See the option descriptions for other
+behavior.
+
+OPTIONS
+-------
+<id>::
+	The credential identifier to be tagged. This can optionally be a
+	comma-separated list of credential identifiers.
+
+<tag>::
+	The tag to be created, modified, deleted, or mapped.
+
+-f::
+--force::
+	Used with the '--delete' option to force a mapped tag to be removed.
+
+-d::
+--delete::
+	Delete tag(s) from a Safeword database. If any credentials are mapped
+	the '--force' option must be used.
+
+-m::
+--move::
+	Move/rename the '<old>' to the first '<tag>'.
+
+-w::
+--wiki::
+	Specify markdown wiki information about the tag. If '<file>' is '-'
+	then input is read from standard input.
+
+-u::
+--untag::
+	Untag the specified tag(s) from the specified credential(s).
+
+SEE ALSO
+--------
+link:safeword-ls[1]
+link:safeword-tag[1]
+link:safeword-add[1]
+link:safeword-edit[1]
+link:safeword-rm[1]
+
+SAFEWORD
+--------
+Part of the link:safeword[1] suite
