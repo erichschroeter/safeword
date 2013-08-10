@@ -1,0 +1,39 @@
+safeword-ls(1)
+==============
+
+NAME
+----
+safeword-ls - List existing credentials in a Safeword database
+
+SYNOPSIS
+--------
+[verse]
+'safeword ls' [--all | -a] [<tag> ...]
+
+DESCRIPTION
+-----------
+This command lists the credentials stored in a Safeword database. Without any
+arguments only credentials with no tags are displayed, otherwise credentials
+with only the specified tags are displayed.
+
+OPTIONS
+-------
+<tag>::
+	A list of tags separated by whitespace. If a tag contains whitespace
+	then it must be wrapped in quotes.
+
+-a::
+--all::
+	List all credentials in a Safeword database.
+
+SEE ALSO
+--------
+link:safeword-show[1]
+link:safeword-cp[1]
+link:safeword-tag[1]
+link:safeword-edit[1]
+link:safeword-rm[1]
+
+SAFEWORD
+--------
+Part of the link:safeword[1] suite
