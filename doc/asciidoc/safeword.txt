@@ -1,0 +1,56 @@
+safeword(1)
+===========
+
+NAME
+----
+safeword - the credential manager
+
+
+SYNOPSIS
+--------
+[verse]
+'safeword' [-v | --version] <command> [<args>]
+
+DESCRIPTION
+-----------
+Safeword is a command line interface credential manager.
+
+OPTIONS
+-------
+-v::
+--version::
+	Prints the Safeword CLI version and the Safeword library version the
+	CLI was compiled with.
+
+SAFEWORD COMMANDS
+-----------------
+
+include::cmds-safeword.txt[]
+
+
+Environment Variables
+---------------------
+Various Safeword commands use the following environment variables:
+
+Safeword Commands
+~~~~~~~~~~~~~~~~~~
+These environment variables apply to 'all' Safeword commands.
+
+'SAFEWORD_DB'::
+	This variable allows the specification of the Safeword database file
+	used by Safeword commands.
+
+Authors
+-------
+Safeword was started by and is maintained by Erich Schroeter.
+http://github.com/erichschroeter/safeword
+
+Reporting Bugs
+--------------
+
+Report bugs to the Safeword Github issue tracker.
+http://github.com/erichschroeter/safeword/issues
+
+SAFEWORD
+--------
+Part of the link:safeword[1] suite

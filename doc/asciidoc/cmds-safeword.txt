@@ -1,0 +1,26 @@
+link:safeword-init[1]::
+	Create a safeword database.
+
+link:safeword-help[1]::
+	Show help for a safeword command.
+
+link:safeword-add[1]::
+	Add credentials to a safeword database.
+
+link:safeword-rm[1]::
+	Remove credentials from a safeword database.
+
+link:safeword-ls[1]::
+	List credentials in a safeword database.
+
+link:safeword-tag[1]::
+	Tag credentials in a safeword database.
+
+link:safeword-cp[1]::
+	Copy credential information to the clipboard.
+
+link:safeword-show[1]::
+	Show credential information.
+
+link:safeword-edit[1]::
+	Edit existing credentials in a safeword database.
