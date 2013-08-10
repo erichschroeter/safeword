@@ -1,0 +1,52 @@
+safeword-add(1)
+===============
+
+NAME
+----
+safeword-add - Add a credential to safeword database
+
+SYNOPSIS
+--------
+[verse]
+'safeword add' [--message | -m MESSAGE] [--tag | -t TAG,...] <username>
+	<password>
+
+DESCRIPTION
+-----------
+This command adds a new credential to a safeword database with the specified
+information. The message option is helpful when listing credentials to see a
+short description of what the credential's intended purpose is.
+
+Please see link:safeword-edit[1] for editing existing credentials.
+
+
+OPTIONS
+-------
+<username>::
+	The username text for the credential. There are no restrictions on
+	characters used for this field.
+
+<password>::
+	The password text for the credential. There are no restrictions on
+	characters used for this field.
+
+-m::
+--message::
+	Some text to describe what the credential is to be used for. This is
+	mainly for your own use so you remember the context in which you
+	intended to use it.
+
+-t::
+--tag::
+	A comma-separated list tags to help filter this credential in a large
+	database.
+
+SEE ALSO
+--------
+link:safeword-edit[1]
+link:safeword-tag[1]
+link:safeword-rm[1]
+
+SAFEWORD
+--------
+Part of the link:safeword[1] suite
