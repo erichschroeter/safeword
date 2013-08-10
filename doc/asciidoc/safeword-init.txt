@@ -1,0 +1,38 @@
+safeword-init(1)
+================
+
+NAME
+----
+safeword-init - Create a safeword database.
+
+SYNOPSIS
+--------
+[verse]
+'safeword init' [--force | -f] <file>
+
+DESCRIPTION
+-----------
+This command creates an empty Safeword database at the specified '<file>'
+location.
+
+OPTIONS
+-------
+<file>::
+	The Safeword database to be created. This will fail if already exists
+	and the '--force' option is not specified.
+
+-f::
+--force::
+	Force the database file initialization. This will overwrite the
+	existing file.
+
+SEE ALSO
+--------
+link:safeword-add[1]
+link:safeword-ls[1]
+link:safeword-show[1]
+link:safeword-cp[1]
+
+SAFEWORD
+--------
+Part of the link:safeword[1] suite
