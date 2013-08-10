@@ -1,0 +1,34 @@
+safeword-rm(1)
+==============
+
+NAME
+----
+safeword-rm - Remove a credential from a Safeword database
+
+SYNOPSIS
+--------
+[verse]
+'safeword rm' <id>
+
+DESCRIPTION
+-----------
+This command removes existing credentials from a Safeword database.
+
+To determine the '<id>' use link:safeword-ls[1].
+
+OPTIONS
+-------
+<id>::
+	The credential identifier to be removed from the database.
+
+SEE ALSO
+--------
+link:safeword-ls[1]
+link:safeword-add[1]
+link:safeword-edit[1]
+link:safeword-tag[1]
+link:safeword-show[1]
+
+SAFEWORD
+--------
+Part of the link:safeword[1] suite
