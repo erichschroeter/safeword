@@ -1,0 +1,36 @@
+safeword-show(1)
+================
+
+NAME
+----
+safeword-show - Show credential or tag information
+
+SYNOPSIS
+--------
+[verse]
+'safeword show' [<id> | <tag>]
+
+DESCRIPTION
+-----------
+This command displays information about either a credential or a tag in a
+Safeword database.
+
+OPTIONS
+-------
+<id>::
+	The credential identifier to display.
+
+<tag>::
+	The tag to display.
+
+SEE ALSO
+--------
+link:safeword-ls[1]
+link:safeword-tag[1]
+link:safeword-add[1]
+link:safeword-edit[1]
+link:safeword-rm[1]
+
+SAFEWORD
+--------
+Part of the link:safeword[1] suite
