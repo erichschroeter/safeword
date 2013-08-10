@@ -1,0 +1,55 @@
+safeword-cp(1)
+================
+
+NAME
+----
+safeword-cp - Copy credential information to the clipboard
+
+SYNOPSIS
+--------
+[verse]
+'safeword cp' [--time | -t] [--username | -u] [--password | -p] <id>
+
+DESCRIPTION
+-----------
+This command copies credential information to the clipboard. Information
+copied to the clipboard is cleared after a default amount of 10 seconds.
+
+If either '--username' or '--password' options are specified the clipboard is
+cleared immediately after the information has been pasted from the clipboard.
+
+Both username and password can be copied to the clipboard in sequence if both
+'-u' and '-p' options are specified. Furthermore, the order in which the
+fields are copied to the clipboard can be specified by the order the options
+are specified.
+
+OPTIONS
+-------
+<id>::
+	The credential identifier to display.
+
+-t::
+--time::
+	Amount of seconds before clearing the clipboard. Default is '10'
+	seconds.
+
+-u::
+--username::
+	Copy the username to the clipboard.
+
+-p::
+--password::
+	Copy the username to the clipboard.
+
+SEE ALSO
+--------
+link:safeword-ls[1]
+link:safeword-tag[1]
+link:safeword-add[1]
+link:safeword-edit[1]
+link:safeword-rm[1]
+link:safeword-show[1]
+
+SAFEWORD
+--------
+Part of the link:safeword[1] suite
