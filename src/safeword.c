@@ -70,6 +70,7 @@ int safeword_init(const char *path)
 {
 	int ret = 0;
 	sqlite3* handle;
+	sqlite3_stmt *stmt = NULL;
 	char sql[512];
 
 	safeword_check(path, ESAFEWORD_INVARG, fail);
@@ -121,6 +122,24 @@ int safeword_init(const char *path)
 		"PRIMARY KEY (credentialid, tagid) "
 		");");
 	ret = sqlite3_exec(handle, sql, 0, 0, 0);
+	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+
+	sprintf(sql, "CREATE TABLE IF NOT EXISTS properties ("
+		"key TEXT PRIMARY KEY NOT NULL, "
+		"value TEXT"
+		");");
+	ret = sqlite3_exec(handle, sql, 0, 0, 0);
+	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+	/* Set default values. */
+	sprintf(sql, "INSERT INTO properties VALUES ( ?, ? );");
+	ret = sqlite3_prepare_v2(handle, sql, strlen(sql) + 1, &stmt, NULL);
+	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+	ret = sqlite3_bind_text(stmt, 1, "version", strlen("version") + 1, SQLITE_STATIC);
+	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+	ret = sqlite3_bind_text(stmt, 2, SAFEWORD_VERSION, strlen(SAFEWORD_VERSION) + 1, SQLITE_STATIC);
+	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+	ret = sqlite3_step(stmt);
+	ret = sqlite3_finalize(stmt);
 	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 
 	sqlite3_close(handle);
