@@ -701,17 +701,17 @@ struct safeword_credential *safeword_credential_create(const char *username, con
 
 	if (username) {
 		cred->username = calloc(strlen(username) + 1, sizeof(char));
-		safeword_check(cred != NULL, ESAFEWORD_NOMEM, fail_username);
+		safeword_check(cred->username != NULL, ESAFEWORD_NOMEM, fail_username);
 		strcpy(cred->username, username);
 	}
 	if (password) {
 		cred->password = calloc(strlen(password) + 1, sizeof(char));
-		safeword_check(cred != NULL, ESAFEWORD_NOMEM, fail_password);
+		safeword_check(cred->password != NULL, ESAFEWORD_NOMEM, fail_password);
 		strcpy(cred->password, password);
 	}
 	if (description) {
 		cred->description = calloc(strlen(description) + 1, sizeof(char));
-		safeword_check(cred != NULL, ESAFEWORD_NOMEM, fail_description);
+		safeword_check(cred->description != NULL, ESAFEWORD_NOMEM, fail_description);
 		strcpy(cred->description, description);
 	}
 
