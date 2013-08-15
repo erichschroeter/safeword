@@ -533,6 +533,32 @@ int safeword_credential_free(struct safeword_credential *credential)
 	return 0;
 }
 
+struct safeword_tag *safeword_tag_create(char *name, char *wiki)
+{
+	struct safeword_tag *tag = calloc(1, sizeof(struct safeword_tag));
+	safeword_check(tag != NULL, ESAFEWORD_NOMEM, fail);
+
+	if (name) {
+		tag->tag = calloc(strlen(name) + 1, sizeof(char));
+		safeword_check(tag->tag != NULL, ESAFEWORD_NOMEM, fail_tag);
+		strcpy(tag->tag, name);
+	}
+	if (wiki) {
+		tag->wiki = calloc(strlen(wiki) + 1, sizeof(char));
+		safeword_check(tag->wiki != NULL, ESAFEWORD_NOMEM, fail_wiki);
+		strcpy(tag->wiki, wiki);
+	}
+
+	return tag;
+fail_wiki:
+	if (tag->tag)
+		free(tag->tag);
+fail_tag:
+	free(tag);
+fail:
+	return NULL;
+}
+
 int safeword_tag_read(struct safeword_db *db, struct safeword_tag *tag)
 {
 	int ret;

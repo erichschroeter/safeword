@@ -200,6 +200,16 @@ int safeword_credential_tag(struct safeword_db *db, long int credential_id, cons
  */
 int safeword_credential_untag(struct safeword_db *db, long int credential_id, const char *tag);
 /**
+ * create a safeword tag object in memory
+ *
+ * This function allocates memory for a safeword_tag struct and the field
+ * values from the specified arguments.
+ *
+ * @see safeword_tag_read, safeword_tag_update, safeword_tag_delete,
+ * safeword_tag_add
+ */
+struct safeword_tag *safeword_tag_create(char *tag, char *wiki);
+/**
  * read an existing tag
  *
  * Reads the database and populates the members in @c tag.
@@ -207,7 +217,8 @@ int safeword_credential_untag(struct safeword_db *db, long int credential_id, co
  * @param db the database to query
  * @param tag a pointer to a @link safeword_tag @endlink to update
  *
- * @see safeword_tag_update, safeword_tag_delete, safeword_tag_rename
+ * @see safeword_tag_create, safeword_tag_update, safeword_tag_delete,
+ * safeword_tag_rename
  */
 int safeword_tag_read(struct safeword_db *db, struct safeword_tag *tag);
 /**
@@ -219,7 +230,8 @@ int safeword_tag_read(struct safeword_db *db, struct safeword_tag *tag);
  * @param tag the tag associated with @c wiki
  * @param wiki a description of @c tag
  *
- * @see safeword_tag_read, safeword_tag_delete, safeword_tag_rename
+ * @see safeword_tag_create, safeword_tag_read, safeword_tag_delete,
+ * safeword_tag_rename
  */
 int safeword_tag_update(struct safeword_db *db, const char *tag, const char *wiki);
 /**
@@ -230,7 +242,8 @@ int safeword_tag_update(struct safeword_db *db, const char *tag, const char *wik
  * @param db the database to modify
  * @param tag the tag to delete
  *
- * @see safeword_tag_read, safeword_tag_update, safeword_tag_rename
+ * @see safeword_tag_create, safeword_tag_read, safeword_tag_update,
+ * safeword_tag_rename
  */
 int safeword_tag_delete(struct safeword_db *db, const char *tag);
 /**
