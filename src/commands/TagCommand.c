@@ -123,6 +123,7 @@ static int update_tag(struct safeword_db* db, void *update_info)
 	struct update_info *info = (struct update_info*) update_info;
 	long wiki_size;
 	char *wiki;
+	struct safeword_tag *tag;
 
 	if (!info || !info->tag) {
 		fprintf(stderr, "no tags specified\n");
@@ -170,7 +171,8 @@ static int update_tag(struct safeword_db* db, void *update_info)
 		}
 	}
 
-	safeword_tag_update(db, info->tag, wiki);
+	tag = safeword_tag_create(info->tag, wiki);
+	safeword_tag_update(db, tag);
 
 fail:
 	free(wiki);

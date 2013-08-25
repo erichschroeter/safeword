@@ -224,16 +224,16 @@ int safeword_tag_read(struct safeword_db *db, struct safeword_tag *tag);
 /**
  * modify an existing tag
  *
- * Updates the @c wiki field associated with @c tag.
+ * Updates the tag with the information specified in @c tag. If @c tag.id is
+ * @c NULL or does not exist the database is not modified.
  *
  * @param db the database to modify
- * @param tag the tag associated with @c wiki
- * @param wiki a description of @c tag
+ * @param tag the data to update the tag with
  *
  * @see safeword_tag_create, safeword_tag_read, safeword_tag_delete,
  * safeword_tag_rename
  */
-int safeword_tag_update(struct safeword_db *db, const char *tag, const char *wiki);
+int safeword_tag_update(struct safeword_db *db, struct safeword_tag *tag);
 /**
  * delete an existing tag
  *
