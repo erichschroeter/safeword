@@ -28,8 +28,14 @@ _safeword()
 		COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
 		;;
 	ls)
-		opts="--all"
-		local tags=$( safeword tag )
+		tags=
+		opts=
+		if [ ${#COMP_WORDS[@]} -gt 3 ] ; then
+			tags=$( safeword tag --filter ${COMP_WORDS[@]:2} )
+		else
+			opts="--all"
+			tags=$( safeword tag )
+		fi
 		COMPREPLY=( $(compgen -W "${opts} ${tags}" -- ${cur}) )
 		;;
 	tag)
