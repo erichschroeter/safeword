@@ -304,7 +304,7 @@ int safeword_cp_password(struct safeword_db *db, int credential_id, unsigned int
  *
  * @see safeword_tag_delete, safeword_tag_read
  */
-int safeword_list_tags(struct safeword_db *db, unsigned int *tags_size, char ***tags,
+int safeword_tag_list(struct safeword_db *db, unsigned int *tags_size, char ***tags,
 	unsigned int filter_size, const char **filter);
 /**
  * list credentials in a safeword database

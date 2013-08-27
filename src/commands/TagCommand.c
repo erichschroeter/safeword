@@ -310,7 +310,7 @@ int tagCmd_execute(void)
 		unsigned int tags_size;
 
 		if (_tags->size > 0) {
-			safeword_list_tags(&db, &tags_size, &tags, (unsigned int) _tags->size, (const char**) _tags->data);
+			safeword_tag_list(&db, &tags_size, &tags, (unsigned int) _tags->size, (const char**) _tags->data);
 
 			for (i = 0; i < tags_size; i++)
 				printf("%s\n", tags[i]);
@@ -344,7 +344,7 @@ int tagCmd_execute(void)
 		char **tags;
 		unsigned int tags_size;
 
-		safeword_list_tags(&db, &tags_size, &tags, 0, 0);
+		safeword_tag_list(&db, &tags_size, &tags, 0, 0);
 
 		for (i = 0; i < tags_size; i++)
 			printf("%s\n", tags[i]);

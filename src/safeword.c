@@ -973,7 +973,7 @@ fail:
 	return NULL;
 }
 
-int safeword_list_tags(struct safeword_db *db, unsigned int *tags_size, char ***tags,
+int safeword_tag_list(struct safeword_db *db, unsigned int *tags_size, char ***tags,
 	unsigned int filter_size, const char **filter)
 {
 	int ret = 0, rows = 0, i = 0;

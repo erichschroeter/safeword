@@ -105,7 +105,7 @@ void test_safeword_tag_filter(void)
 	filter[0] = "email";
 
 	/* Verify that the tags are filtered correctly. */
-	ret = safeword_list_tags(db1, &tags_size, &tags, 1, (const char**) filter);
+	ret = safeword_tag_list(db1, &tags_size, &tags, 1, (const char**) filter);
 	CU_ASSERT(ret == 0);
 	CU_ASSERT(tags_size == 5);
 	for (i = 0; i < tags_size; i++) {

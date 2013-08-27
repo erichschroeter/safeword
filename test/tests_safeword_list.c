@@ -11,7 +11,7 @@ void test_safeword_list_null_db(void)
 	struct safeword_db *null_ptr = 0;
 	int ret;
 
-	ret = safeword_list_tags(null_ptr, 0, NULL, 0, NULL);
+	ret = safeword_tag_list(null_ptr, 0, NULL, 0, NULL);
 	CU_ASSERT(ret != 0);
 }
 
@@ -22,7 +22,7 @@ void test_safeword_list_tags_all(void)
 	unsigned int tags_size;
 	char **tags;
 
-	ret = safeword_list_tags(db1, &tags_size, &tags, 0, 0);
+	ret = safeword_tag_list(db1, &tags_size, &tags, 0, 0);
 	CU_ASSERT(ret == 0);
 	/* NOTE: update if more tags are added to suite init. */
 	CU_ASSERT(tags_size == SAFEWORD_TAG_NUM_SCIENTIST_TAGS);
@@ -50,7 +50,7 @@ void test_safeword_list_tags_filter(void)
 	 */
 	const char *filter[] = { "scientist" };
 
-	ret = safeword_list_tags(db1, &tags_size, &tags, 1, filter);
+	ret = safeword_tag_list(db1, &tags_size, &tags, 1, filter);
 	CU_ASSERT(ret == 0);
 	CU_ASSERT(tags_size == 4);
 
