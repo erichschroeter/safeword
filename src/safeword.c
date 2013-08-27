@@ -224,7 +224,7 @@ static int credentials_callback(void* not_used, int argc, char** argv, char** co
 	return 0;
 }
 
-int safeword_list_credentials(struct safeword_db *db, unsigned int tags_size, char **tags)
+int safeword_credential_list(struct safeword_db *db, unsigned int tags_size, char **tags)
 {
 	int ret = 0, i;
 	char *sql;

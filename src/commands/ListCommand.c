@@ -71,12 +71,12 @@ int listCmd_execute(void)
 	safeword_check(!ret, ret, fail);
 
 	if (tags && !printAll) {
-		safeword_list_credentials(&db, tags_size, tags);
+		safeword_credential_list(&db, tags_size, tags);
 	} else {
 		if (printAll) {
-			safeword_list_credentials(&db, UINT_MAX, 0);
+			safeword_credential_list(&db, UINT_MAX, 0);
 		} else {
-			safeword_list_credentials(&db, 0, 0);
+			safeword_credential_list(&db, 0, 0);
 		}
 	}
 

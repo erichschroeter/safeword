@@ -200,6 +200,25 @@ int safeword_credential_tag(struct safeword_db *db, long int credential_id, cons
  */
 int safeword_credential_untag(struct safeword_db *db, long int credential_id, const char *tag);
 /**
+ * list credentials in a safeword database
+ *
+ * This function will create an array of @link safeword_credential @endlink
+ * and assign it to @c credentials, also setting @c credentials_size to the
+ * number of credentials in the array.
+ *
+ * If @c tags_size is zero or @c tags is @c NULL then @c credentials will
+ * contain all credentials within the database.
+ *
+ * @param db the safeword database to query
+ * @param tags_size number of tags in @c tags
+ * @param tags the tags to filter credentials by
+ * @param credentials_size number of credentials in @c credentials
+ * @param credentials the credentials found in the database
+ *
+ * @see safeword_credential_free, safeword_credential_read
+ */
+int safeword_credential_list(struct safeword_db *db, unsigned int tags_size, char **tags);
+/**
  * create a safeword tag object in memory
  *
  * This function allocates memory for a safeword_tag struct and the field
@@ -259,6 +278,26 @@ int safeword_tag_delete(struct safeword_db *db, const char *tag);
  */
 int safeword_tag_rename(struct safeword_db *db, const char *old, const char *new);
 /**
+ * list tags in a safeword database
+ *
+ * This function will create an array of @link safeword_tag @endlink and
+ * assign it to @c tags, also setting @c tags_size to the number of tags
+ * in the array.
+ *
+ * If @c filter_size is zero or @c filter is @c NULL then @c tags will contain
+ * all tags within the database.
+ *
+ * @param db the safeword database to query
+ * @param tags_size number of tags in @c tags
+ * @param tags the tags found in the database
+ * @param filter_size number of tags in filter
+ * @param filter the tags to filter by
+ *
+ * @see safeword_tag_delete, safeword_tag_read
+ */
+int safeword_tag_list(struct safeword_db *db, unsigned int *tags_size, char ***tags,
+	unsigned int filter_size, const char **filter);
+/**
  * copy username to clipboard
  *
  * This function will place the username associated with the credential whose
@@ -286,45 +325,6 @@ int safeword_cp_username(struct safeword_db *db, int credential_id, unsigned int
  * @see safeword_cp_username
  */
 int safeword_cp_password(struct safeword_db *db, int credential_id, unsigned int ms);
-/**
- * list tags in a safeword database
- *
- * This function will create an array of @link safeword_tag @endlink and
- * assign it to @c tags, also setting @c tags_size to the number of tags
- * in the array.
- *
- * If @c filter_size is zero or @c filter is @c NULL then @c tags will contain
- * all tags within the database.
- *
- * @param db the safeword database to query
- * @param tags_size number of tags in @c tags
- * @param tags the tags found in the database
- * @param filter_size number of tags in filter
- * @param filter the tags to filter by
- *
- * @see safeword_tag_delete, safeword_tag_read
- */
-int safeword_tag_list(struct safeword_db *db, unsigned int *tags_size, char ***tags,
-	unsigned int filter_size, const char **filter);
-/**
- * list credentials in a safeword database
- *
- * This function will create an array of @link safeword_credential @endlink
- * and assign it to @c credentials, also setting @c credentials_size to the
- * number of credentials in the array.
- *
- * If @c tags_size is zero or @c tags is @c NULL then @c credentials will
- * contain all credentials within the database.
- *
- * @param db the safeword database to query
- * @param tags_size number of tags in @c tags
- * @param tags the tags to filter credentials by
- * @param credentials_size number of credentials in @c credentials
- * @param credentials the credentials found in the database
- *
- * @see safeword_credential_free, safeword_credential_read
- */
-int safeword_list_credentials(struct safeword_db *db, unsigned int tags_size, char **tags);
 
 #endif // SAFEWORD_H
 /** @} */
