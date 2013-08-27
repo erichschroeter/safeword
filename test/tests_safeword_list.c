@@ -52,11 +52,11 @@ void test_safeword_list_tags_filter(void)
 
 	ret = safeword_tag_list(db1, &tags_size, &tags, 1, filter);
 	CU_ASSERT(ret == 0);
-	CU_ASSERT(tags_size == 4);
+	CU_ASSERT(tags_size == 3);
 
 	for (i = 0; i < tags_size; i++) {
-		if (!strcmp(tags[i], "genius") || !strcmp(tags[i], "scientist") ||
-		!strcmp(tags[i], "teacher") || !strcmp(tags[i], "astrophysicist")) {
+		if (!strcmp(tags[i], "genius") || !strcmp(tags[i], "teacher") ||
+		!strcmp(tags[i], "astrophysicist")) {
 			/* tag exists and matches */
 		} else {
 			CU_FAIL("We got a tag that we shouldn't have.");
@@ -68,8 +68,11 @@ CU_TestInfo tests_list_null[] = {
 	{ "test_safeword_list_null_db", test_safeword_list_null_db },
 	CU_TEST_INFO_NULL,
 };
-CU_TestInfo tests_list_tags[] = {
+CU_TestInfo tests_list_tags_all[] = {
 	{ "test_safeword_list_tags_all", test_safeword_list_tags_all },
+	CU_TEST_INFO_NULL,
+};
+CU_TestInfo tests_list_tags_filter[] = {
 	{ "test_safeword_list_tags_filter", test_safeword_list_tags_filter },
 	CU_TEST_INFO_NULL,
 };

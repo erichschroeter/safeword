@@ -8,6 +8,7 @@ void test_safeword_list_null_db(void);
 void test_safeword_list_tags_all(void);
 void test_safeword_list_tags_filter(void);
 extern CU_TestInfo tests_list_null[];
-extern CU_TestInfo tests_list_tags[];
+extern CU_TestInfo tests_list_tags_all[];
+extern CU_TestInfo tests_list_tags_filter[];
 
 #endif /* TESTS_SAFEWORD_LIST_H */
