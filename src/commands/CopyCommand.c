@@ -83,7 +83,7 @@ int copyCmd_execute(void)
 	 * this command multiple times.
 	 */
 	if (_copy[i] != 0) {
-		safeword_config("copy_once", "1");
+		safeword_config(&db, "copy_once", "1");
 
 		do {
 			switch (_copy[i]) {

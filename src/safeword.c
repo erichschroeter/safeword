@@ -19,7 +19,6 @@
 #include "commands/Command.h"
 
 int safeword_errno = 0;
-static int _copy_once = 0;
 
 char* safeword_strerror(int errnum)
 {
@@ -52,15 +51,71 @@ void safeword_perror(const char *string)
 	fprintf(stderr, "%s", safeword_strerror(safeword_errno));
 }
 
-int safeword_config(const char* key, const char* value)
+int safeword_config(struct safeword_db *db, const char *key, char *value)
 {
-	if (!strcmp(key, "copy_once")) {
-		if (strlen(value) == 1 && value[0] == '1')
-			_copy_once = 1;
-	} else
-		return -1;
+	int ret;
+
+	safeword_check(key != NULL, ESAFEWORD_INVARG, fail);
+
+	if (value == NULL) {
+		sqlite3_stmt *stmt = NULL;
+		const char *sql = "SELECT value FROM properties WHERE key LIKE ?;";
+
+		printf("reading\n");
+		ret = sqlite3_prepare_v2(db->handle, sql, strlen(sql) + 1, &stmt, NULL);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_bind_text(stmt, 1, key, strlen(key) + 1, SQLITE_STATIC);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_step(stmt);
+		if (ret == SQLITE_ROW) {
+			const char *col = (const char*) sqlite3_column_text(stmt, 0);
+			value = (char*) col;
+		}
+		ret = sqlite3_finalize(stmt);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+	} else {
+		if (!strcmp(key, "copy_once")) {
+			if (value == NULL || strlen(value) == 0 || value[0] == '0')
+				db->config.copy_once = 0;
+			else
+				db->config.copy_once = 1;
+		}
+	}
 
 	return 0;
+fail:
+	return -1;
+}
+
+static int safeword_config_load(struct safeword_db *db)
+{
+	const char *sql = "SELECT key, value FROM properties;";
+	sqlite3_stmt *stmt = NULL;
+	int ret;
+
+	ret = sqlite3_prepare_v2(db->handle, sql, strlen(sql) + 1, &stmt, NULL);
+	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+	do {
+		ret = sqlite3_step(stmt);
+		if (ret != SQLITE_ROW)
+			break;
+
+		const char *key = (const char*) sqlite3_column_text(stmt, 0);
+		const char *value = (const char*) sqlite3_column_text(stmt, 1);
+
+		if (!strcmp(key, "copy_once")) {
+			if (value == NULL || strlen(value) == 0 || value[0] == '0')
+				db->config.copy_once = 0;
+			else
+				db->config.copy_once = 1;
+		}
+	} while (ret == SQLITE_ROW);
+	ret = sqlite3_finalize(stmt);
+	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+
+	return 0;
+fail:
+	return -1;
 }
 
 /* #region safeword init function */
@@ -187,6 +242,10 @@ int safeword_open(struct safeword_db *db, const char *path)
 	/* enable foreign key support in Sqlite3 so delete cascading works. */
 	ret = sqlite3_exec(db->handle, "PRAGMA foreign_keys = ON;", 0, 0, 0);
 	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+
+	/* Default all config values to zero/NULL. */
+	memset(&db->config, 0, sizeof(db->config));
+	safeword_config_load(db);
 
 	return 0;
 fail:
@@ -1092,6 +1151,7 @@ struct __async_waiting_data {
 	Display *dpy;
 	Window *win;
 	char *data;
+	struct safeword_db *db;
 };
 
 static void* wait_for_clipboard_request(void *waiting_data)
@@ -1141,7 +1201,7 @@ static void* wait_for_clipboard_request(void *waiting_data)
 					strlen(data->data));
 				respond.xselection.property=req->property;
 
-				if (_copy_once) {
+				if (data->db->config.copy_once) {
 					*data->waiting = 0;
 				}
 			} else {
@@ -1161,16 +1221,33 @@ static void* wait_for_clipboard_request(void *waiting_data)
 }
 #endif
 
-static int copy_credential_callback(void* millis, int argc, char** argv, char** col_name)
+static int safeword_cp(struct safeword_db *db, int credential_id, unsigned int ms,
+	const char* table, const char* field)
 {
+	int ret;
+	char sql[256];
+	sqlite3_stmt *stmt = NULL;
+	const char *to_copy = NULL;
+
+	sprintf(sql, "SELECT t.%s FROM %s AS t "
+		"INNER JOIN credentials AS c "
+		"ON (c.%sid = t.id) WHERE c.id = %d;", field, table, field, credential_id);
+
+	ret = sqlite3_prepare_v2(db->handle, sql, strlen(sql) + 1, &stmt, NULL);
+	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+	ret = sqlite3_step(stmt);
+	if (ret == SQLITE_ROW) {
+		to_copy = (const char*) sqlite3_column_text(stmt, 0);
+	}
+
 #ifdef WIN32
-	DWORD len = strlen(argv[0]);
+	DWORD len = strlen(to_copy);
 	HGLOBAL lock;
 	LPWSTR data;
 
 	lock = GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, (len + 1) * sizeof(char));
 	data = (LPWSTR)GlobalLock(lock);
-	memcpy(data, argv[0], len * sizeof(char));
+	memcpy(data, to_copy, len * sizeof(char));
 	data[len] = 0;
 	GlobalUnlock(lock);
 
@@ -1179,11 +1256,7 @@ static int copy_credential_callback(void* millis, int argc, char** argv, char** 
 	EmptyClipboard();
 	if (!SetClipboardData(CF_TEXT, lock)) return GetLastError();
 	CloseClipboard();
-
-	return 0;
 #else
-	int ret = 0;
-	unsigned int *ms = millis;
 	volatile int waiting = 1;
 	char *data;
 	struct timespec start, now;
@@ -1191,10 +1264,10 @@ static int copy_credential_callback(void* millis, int argc, char** argv, char** 
 	Window win;
 
 	/* copy the data to local variable that will stay in scope for waiting thread */
-	data = calloc(strlen(argv[0]) + 1, sizeof(char));
-	safeword_check(data, ESAFEWORD_NOMEM, fail);
+	data = calloc(strlen(to_copy) + 1, sizeof(char));
+	safeword_check(data != NULL, ESAFEWORD_NOMEM, fail);
 
-	strcpy(data, argv[0]);
+	strcpy(data, to_copy);
 
 	if (!(dpy = XOpenDisplay(NULL))) {
 		debug("could not open display\n");
@@ -1213,42 +1286,26 @@ static int copy_credential_callback(void* millis, int argc, char** argv, char** 
 	waiting_data.dpy = dpy;
 	waiting_data.win = &win;
 	waiting_data.data = data;
+	waiting_data.db = db;
 
 	pthread_t tid;
 	pthread_create(&tid, NULL, &wait_for_clipboard_request, &waiting_data);
 
 	while (waiting) {
-		if (diff(&start, &now) > *ms) {
+		if (diff(&start, &now) > ms) {
 			pthread_cancel(tid);
 			waiting = 0;
 		}
 
 		clock_gettime(CLOCK_MONOTONIC, &now);
 	}
-
-fail:
-	free(data);
-	return ret;
 #endif
-}
-
-static int safeword_cp(struct safeword_db *db, int credential_id, unsigned int ms,
-	const char* table, const char* field)
-{
-	int ret;
-	char *sql;
-
-	sql = calloc(256, sizeof(char));
-	safeword_check(sql != NULL, ESAFEWORD_NOMEM, fail);
-
-	sprintf(sql, "SELECT t.%s FROM %s AS t "
-		"INNER JOIN credentials AS c "
-		"ON (c.%sid = t.id) WHERE c.id = %d;", field, table, field, credential_id);
-	ret = sqlite3_exec(db->handle, sql, copy_credential_callback, &ms, 0);
+	ret = sqlite3_finalize(stmt);
 	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
-	free(sql);
+
+	return 0;
 fail:
-	return ret;
+	return -1;
 }
 
 int safeword_cp_username(struct safeword_db *db, int credential_id, unsigned int ms)

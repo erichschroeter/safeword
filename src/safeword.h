@@ -29,9 +29,14 @@ extern int safeword_errno;
 char* safeword_strerror(int errnum);
 void safeword_perror(const char *string);
 
+struct safeword_config {
+	int copy_once;
+};
+
 struct safeword_db {
 	char    *path;
 	sqlite3 *handle;
+	struct safeword_config config;
 };
 
 struct safeword_tag {
@@ -82,7 +87,22 @@ int safeword_open(struct safeword_db *db, const char *path);
  * @see safeword_init, safeword_open
  */
 int safeword_close(struct safeword_db *db);
-int safeword_config(const char* key, const char* value);
+/**
+ * get or set configuration values
+ *
+ * Retrieve or modify configuration values. A configuration values consists of
+ * a key-value pair.
+ *
+ * If @c value is @c NULL it will be set to the existing value if one
+ * currently exists.
+ *
+ * @param db a pointer to the database to be queried or modified
+ * @param key the config key
+ * @param value the new config value, or @c NULL to read
+ *
+ * @return 
+ */
+int safeword_config(struct safeword_db *db, const char *key, char *value);
 char* safeword_credential_tostring(struct safeword_credential *credential);
 /**
  * test the existence of the credential specified by @c credential_id
