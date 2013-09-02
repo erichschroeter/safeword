@@ -879,47 +879,88 @@ fail:
 
 int safeword_credential_update(struct safeword_db *db, struct safeword_credential *credential)
 {
-	int ret = 0;
-	char *sql;
+	int ret;
+	sqlite3_stmt *stmt = NULL;
 
 	if (!credential->id)
 		goto fail;
 
-	sql = calloc(512, sizeof(char));
-	safeword_check(sql != NULL, ESAFEWORD_NOMEM, fail);
-
 	if (credential->username) {
+		char *sql_insert = "INSERT OR IGNORE INTO usernames (username) VALUES (?);";
+		char *sql_update = "UPDATE OR ABORT credentials SET usernameid = COALESCE("
+			"(SELECT id FROM usernames WHERE username = ?), usernameid) WHERE id = ?;";
+
 		/* Add the new username to the database if it does not already exist. */
-		sprintf(sql, "INSERT OR IGNORE INTO usernames (username) VALUES ('%s');", credential->username);
-		ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
+		ret = sqlite3_prepare_v2(db->handle, sql_insert, strlen(sql_insert) + 1, &stmt, NULL);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_bind_text(stmt, 1, credential->username, strlen(credential->username) + 1, SQLITE_STATIC);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_step(stmt);
+		safeword_check(ret == SQLITE_DONE, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_finalize(stmt);
+
 		/* Update the usernameid to the id of the username if it exists. */
-		sprintf(sql, "UPDATE OR ABORT credentials SET usernameid = COALESCE("
-			"(SELECT id FROM usernames WHERE username = '%s'), usernameid) WHERE id = %d;",
-			credential->username, credential->id);
-		ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_prepare_v2(db->handle, sql_update, strlen(sql_update) + 1, &stmt, NULL);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_bind_int64(stmt, 2, credential->id);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_bind_text(stmt, 1, credential->username, strlen(credential->username) + 1, SQLITE_STATIC);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_step(stmt);
+		safeword_check(ret == SQLITE_DONE, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_finalize(stmt);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 	}
 
 	if (credential->password) {
+		char *sql_insert = "INSERT OR IGNORE INTO passwords (password) VALUES (?);";
+		char *sql_update = "UPDATE OR ABORT credentials SET passwordid = COALESCE("
+			"(SELECT id FROM passwords WHERE password = ?), passwordid) WHERE id = ?;";
+
 		/* Add the new password to the database if it does not already exist. */
-		sprintf(sql, "INSERT OR IGNORE INTO passwords (password) VALUES ('%s');", credential->password);
-		ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
+		ret = sqlite3_prepare_v2(db->handle, sql_insert, strlen(sql_insert) + 1, &stmt, NULL);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_bind_text(stmt, 1, credential->password, strlen(credential->password) + 1, SQLITE_STATIC);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_step(stmt);
+		safeword_check(ret == SQLITE_DONE, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_finalize(stmt);
+
 		/* Update the passwordid to the id of the password if it exists. */
-		sprintf(sql, "UPDATE OR ABORT credentials SET passwordid = COALESCE("
-			"(SELECT id FROM passwords WHERE password = '%s'), passwordid) WHERE id = %d;",
-			credential->password, credential->id);
-		ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_prepare_v2(db->handle, sql_update, strlen(sql_update) + 1, &stmt, NULL);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_bind_int64(stmt, 2, credential->id);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_bind_text(stmt, 1, credential->password, strlen(credential->password) + 1, SQLITE_STATIC);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_step(stmt);
+		safeword_check(ret == SQLITE_DONE, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_finalize(stmt);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 	}
 
 	if (credential->description) {
+		char *sql_update = "UPDATE OR ABORT credentials SET description = ? WHERE id = ?;";
+
 		/* Update the description if it exists. */
-		sprintf(sql, "UPDATE OR ABORT credentials SET description = '%s' WHERE id = %d;",
-			credential->description, credential->id);
-		ret = sqlite3_exec(db->handle, sql, 0, 0, 0);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_prepare_v2(db->handle, sql_update, strlen(sql_update) + 1, &stmt, NULL);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_bind_int64(stmt, 2, credential->id);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_bind_text(stmt, 1, credential->description, strlen(credential->description) + 1, SQLITE_STATIC);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_step(stmt);
+		safeword_check(ret == SQLITE_DONE, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_finalize(stmt);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 	}
 
+	return 0;
 fail:
-	free(sql);
-	return ret;
+	return -1;
 }
 
 /* #endregion safeword credential functions */
