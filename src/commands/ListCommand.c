@@ -66,18 +66,26 @@ int listCmd_execute(void)
 {
 	int ret = 0, i;
 	struct safeword_db db;
+	struct safeword_credential **credentials;
+	unsigned int credentials_size;
 
 	ret = safeword_open(&db, 0);
 	safeword_check(!ret, ret, fail);
 
 	if (tags && !printAll) {
-		safeword_credential_list(&db, tags_size, tags);
+		ret = safeword_credential_list(&db, tags_size, tags, &credentials_size, &credentials);
 	} else {
 		if (printAll) {
-			safeword_credential_list(&db, UINT_MAX, 0);
+			ret = safeword_credential_list(&db, UINT_MAX, 0, &credentials_size, &credentials);
 		} else {
-			safeword_credential_list(&db, 0, 0);
+			ret = safeword_credential_list(&db, 0, 0, &credentials_size, &credentials);
 		}
+	}
+
+	safeword_check(ret == 0, safeword_errno, fail);
+
+	for (i = 0; i < credentials_size; i++) {
+		printf("%d: %s\n", credentials[i]->id, credentials[i]->description);
 	}
 
 	safeword_close(&db);

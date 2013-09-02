@@ -256,7 +256,8 @@ int safeword_credential_untag(struct safeword_db *db, long int credential_id, co
  *
  * @see safeword_credential_free, safeword_credential_read
  */
-int safeword_credential_list(struct safeword_db *db, unsigned int tags_size, char **tags);
+int safeword_credential_list(struct safeword_db *db, unsigned int tags_size, char **tags,
+	unsigned int *credentials_size, struct safeword_credential ***credentials);
 /**
  * create a safeword tag object in memory
  *
