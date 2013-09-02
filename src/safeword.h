@@ -88,21 +88,40 @@ int safeword_open(struct safeword_db *db, const char *path);
  */
 int safeword_close(struct safeword_db *db);
 /**
- * get or set configuration values
+ * get a configuration value
  *
- * Retrieve or modify configuration values. A configuration values consists of
- * a key-value pair.
+ * Retrieve configuration values stored within a safeword database. A
+ * configuration value consists of a key-value pair.
  *
- * If @c value is @c NULL it will be set to the existing value if one
+ * The value of @c value will be set to a new string with the value returned
+ * from querying the database.
  * currently exists.
  *
- * @param db a pointer to the database to be queried or modified
+ * @param db a pointer to the database to be queried
  * @param key the config key
- * @param value the new config value, or @c NULL to read
+ * @param value a pointer to a string that will be created by this function
  *
- * @return 
+ * @see safeword_config_set
  */
-int safeword_config(struct safeword_db *db, const char *key, char *value);
+int safeword_config_get(struct safeword_db *db, const char *key, char **value);
+/**
+ * set a configuration value
+ *
+ * Modify configuration values stored within a safeword database. A
+ * configuration values consists of a key-value pair.
+ *
+ * If @c persist is @c TRUE the value will be updated within the safeword
+ * database. If @c persist is @c FALSE only the value within @c db.config will
+ * be modified.
+ *
+ * @param db a pointer to the database to be modified
+ * @param key the config key
+ * @param value the value to update @c key with
+ * @param persist whether or not to modify the database
+ *
+ * @see safeword_config_get
+ */
+int safeword_config_set(struct safeword_db *db, const char *key, char *value, int persist);
 char* safeword_credential_tostring(struct safeword_credential *credential);
 /**
  * test the existence of the credential specified by @c credential_id

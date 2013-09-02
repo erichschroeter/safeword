@@ -51,35 +51,68 @@ void safeword_perror(const char *string)
 	fprintf(stderr, "%s", safeword_strerror(safeword_errno));
 }
 
-int safeword_config(struct safeword_db *db, const char *key, char *value)
+int safeword_config_get(struct safeword_db *db, const char *key, char **value)
 {
+	const char *sql = "SELECT value FROM properties WHERE key LIKE ?;";
+	sqlite3_stmt *stmt = NULL;
 	int ret;
 
+	safeword_check(db != NULL, ESAFEWORD_INVARG, fail);
+	safeword_check(key != NULL, ESAFEWORD_INVARG, fail);
+	safeword_check(value != NULL, ESAFEWORD_INVARG, fail);
+
+	ret = sqlite3_prepare_v2(db->handle, sql, strlen(sql) + 1, &stmt, NULL);
+	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+	ret = sqlite3_bind_text(stmt, 1, key, strlen(key) + 1, SQLITE_STATIC);
+	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+	ret = sqlite3_step(stmt);
+	if (ret == SQLITE_ROW) {
+		const char *field = (const char*) sqlite3_column_text(stmt, 0);
+		*value = calloc(strlen(field) + 1, sizeof(char));
+		safeword_check(*value != NULL, ESAFEWORD_NOMEM, fail);
+		strcpy(*value, field);
+	} else {
+		*value = NULL;
+	}
+	ret = sqlite3_finalize(stmt);
+	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+
+	return 0;
+fail:
+	return -1;
+}
+
+int safeword_config_set(struct safeword_db *db, const char *key, char *value, int persist)
+{
+	const char *sql = "UPDATE properties SET value = ? WHERE key = ?;";
+	sqlite3_stmt *stmt = NULL;
+	int ret;
+
+	safeword_check(db != NULL, ESAFEWORD_INVARG, fail);
 	safeword_check(key != NULL, ESAFEWORD_INVARG, fail);
 
-	if (value == NULL) {
-		sqlite3_stmt *stmt = NULL;
-		const char *sql = "SELECT value FROM properties WHERE key LIKE ?;";
+	if (!strcmp(key, "copy_once")) {
+		if (value == NULL || strlen(value) == 0 || value[0] == '0')
+			db->config.copy_once = 0;
+		else
+			db->config.copy_once = 1;
+	}
 
-		printf("reading\n");
+	if (persist) {
 		ret = sqlite3_prepare_v2(db->handle, sql, strlen(sql) + 1, &stmt, NULL);
 		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
-		ret = sqlite3_bind_text(stmt, 1, key, strlen(key) + 1, SQLITE_STATIC);
+		if (value == NULL) {
+			ret = sqlite3_bind_null(stmt, 1);
+		} else {
+			ret = sqlite3_bind_text(stmt, 1, value, strlen(value) + 1, SQLITE_STATIC);
+		}
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_bind_text(stmt, 2, key, strlen(key) + 1, SQLITE_STATIC);
 		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 		ret = sqlite3_step(stmt);
-		if (ret == SQLITE_ROW) {
-			const char *col = (const char*) sqlite3_column_text(stmt, 0);
-			value = (char*) col;
-		}
+		safeword_check(ret == SQLITE_DONE, ESAFEWORD_BACKENDSTORAGE, fail);
 		ret = sqlite3_finalize(stmt);
 		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
-	} else {
-		if (!strcmp(key, "copy_once")) {
-			if (value == NULL || strlen(value) == 0 || value[0] == '0')
-				db->config.copy_once = 0;
-			else
-				db->config.copy_once = 1;
-		}
 	}
 
 	return 0;
