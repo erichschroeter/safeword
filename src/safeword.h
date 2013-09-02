@@ -245,12 +245,15 @@ int safeword_credential_untag(struct safeword_db *db, long int credential_id, co
  * and assign it to @c credentials, also setting @c credentials_size to the
  * number of credentials in the array.
  *
- * If @c tags_size is zero or @c tags is @c NULL then @c credentials will
- * contain all credentials within the database.
+ * If @c tags is @c NULL the value of @c tags_size will determine the
+ * credentials returned in @c credentials. If @c tags_size is @c UINT_MAX all
+ * credentials within the database will be returned, otherwise any credentials
+ * with no tags associated will be returned.
  *
  * @param db the safeword database to query
- * @param tags_size number of tags in @c tags
- * @param tags the tags to filter credentials by
+ * @param tags_size number of tags in @c tags (@c UINT_MAX to return
+ * all credentials)
+ * @param tags the tags to filter credentials by, or @c NULL
  * @param credentials_size number of credentials in @c credentials
  * @param credentials the credentials found in the database
  *

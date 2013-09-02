@@ -359,6 +359,7 @@ int safeword_credential_list(struct safeword_db *db, unsigned int tags_size, cha
 		"SELECT id FROM tags));";
 	sqlite3_stmt *stmt = NULL;
 
+	safeword_check(db != NULL, ESAFEWORD_INVARG, fail);
 
 	/* Prepare SQL for getting number of rows in result set. */
 	if (tags_size > 0 && tags != NULL) {
@@ -419,8 +420,9 @@ int safeword_credential_list(struct safeword_db *db, unsigned int tags_size, cha
 	ret = sqlite3_finalize(stmt);
 	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 
+	return 0;
 fail:
-	return ret;
+	return -1;
 }
 
 /* #endregion safeword list functions */
