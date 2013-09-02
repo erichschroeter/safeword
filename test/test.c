@@ -36,6 +36,7 @@ const unsigned int EXAMPLES_SIZE = sizeof(examples) / sizeof(examples[0]);
 #include "tests_safeword_read.h"
 #include "tests_safeword_list.h"
 #include "tests_safeword_tag.h"
+#include "tests_safeword_config.h"
 
 int suite_safeword_init(void)
 {
@@ -105,6 +106,8 @@ static CU_SuiteInfo suites[] = {
 	{ "suite_safeword_tag_null",             NULL,                     NULL,                 tests_tag_null },
 	{ "suite_safeword_tag_credential",       suite_safeword_init,      suite_safeword_clean, tests_tag_credential },
 	{ "suite_safeword_tag_filter",           suite_safeword_init,      suite_safeword_clean, tests_tag_filter },
+	{ "suite_safeword_config_null",          NULL,                     NULL,                 tests_config_null },
+	{ "suite_safeword_config_examples",      suite_safeword_init,      suite_safeword_clean, tests_config_examples },
 	CU_SUITE_INFO_NULL,
 };
 
