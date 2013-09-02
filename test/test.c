@@ -37,6 +37,7 @@ const unsigned int EXAMPLES_SIZE = sizeof(examples) / sizeof(examples[0]);
 #include "tests_safeword_list.h"
 #include "tests_safeword_tag.h"
 #include "tests_safeword_config.h"
+#include "tests_safeword_list_credentials.h"
 
 int suite_safeword_init(void)
 {
@@ -90,24 +91,27 @@ int suite_safeword_examples(void)
 }
 
 static CU_SuiteInfo suites[] = {
-	{ "suite_init",                          NULL,                     NULL,                 tests_init },
-	{ "suite_safeword_add_null",             NULL,                     NULL,                 tests_add_null },
-	{ "suite_safeword_add_username_only",    suite_safeword_init,      suite_safeword_clean, tests_add_usernames },
-	{ "suite_safeword_add_password_only",    suite_safeword_init,      suite_safeword_clean, tests_add_passwords },
-	{ "suite_safeword_add_description_only", suite_safeword_init,      suite_safeword_clean, tests_add_descriptions },
-	{ "suite_safeword_add_all",              suite_safeword_init,      suite_safeword_clean, tests_add_all },
-	{ "suite_safeword_remove_null",          NULL,                     NULL,                 tests_remove_null },
-	{ "suite_safeword_remove_one",           suite_safeword_examples,  suite_safeword_clean, tests_remove_one },
-	{ "suite_safeword_read_null",            NULL,                     NULL,                 tests_read_null },
-	{ "suite_safeword_read_examples",        suite_safeword_examples,  suite_safeword_clean, tests_read_examples },
-	{ "suite_safeword_list_null",            NULL,                     NULL,                 tests_list_null },
-	{ "suite_safeword_list_tags_all",        suite_safeword_list_init, suite_safeword_clean, tests_list_tags_all },
-	{ "suite_safeword_list_tags_filter",     suite_safeword_list_init, suite_safeword_clean, tests_list_tags_filter },
-	{ "suite_safeword_tag_null",             NULL,                     NULL,                 tests_tag_null },
-	{ "suite_safeword_tag_credential",       suite_safeword_init,      suite_safeword_clean, tests_tag_credential },
-	{ "suite_safeword_tag_filter",           suite_safeword_init,      suite_safeword_clean, tests_tag_filter },
-	{ "suite_safeword_config_null",          NULL,                     NULL,                 tests_config_null },
-	{ "suite_safeword_config_examples",      suite_safeword_init,      suite_safeword_clean, tests_config_examples },
+	{ "suite_init",                                NULL,                     NULL,                 tests_init },
+	{ "suite_safeword_add_null",                   NULL,                     NULL,                 tests_add_null },
+	{ "suite_safeword_add_username_only",          suite_safeword_init,      suite_safeword_clean, tests_add_usernames },
+	{ "suite_safeword_add_password_only",          suite_safeword_init,      suite_safeword_clean, tests_add_passwords },
+	{ "suite_safeword_add_description_only",       suite_safeword_init,      suite_safeword_clean, tests_add_descriptions },
+	{ "suite_safeword_add_all",                    suite_safeword_init,      suite_safeword_clean, tests_add_all },
+	{ "suite_safeword_remove_null",                NULL,                     NULL,                 tests_remove_null },
+	{ "suite_safeword_remove_one",                 suite_safeword_examples,  suite_safeword_clean, tests_remove_one },
+	{ "suite_safeword_read_null",                  NULL,                     NULL,                 tests_read_null },
+	{ "suite_safeword_read_examples",              suite_safeword_examples,  suite_safeword_clean, tests_read_examples },
+	{ "suite_safeword_list_null",                  NULL,                     NULL,                 tests_list_null },
+	{ "suite_safeword_list_tags_all",              suite_safeword_list_init, suite_safeword_clean, tests_list_tags_all },
+	{ "suite_safeword_list_tags_filter",           suite_safeword_list_init, suite_safeword_clean, tests_list_tags_filter },
+	{ "suite_safeword_tag_null",                   NULL,                     NULL,                 tests_tag_null },
+	{ "suite_safeword_tag_credential",             suite_safeword_init,      suite_safeword_clean, tests_tag_credential },
+	{ "suite_safeword_tag_filter",                 suite_safeword_init,      suite_safeword_clean, tests_tag_filter },
+	{ "suite_safeword_config_null",                NULL,                     NULL,                 tests_config_null },
+	{ "suite_safeword_config_examples",            suite_safeword_init,      suite_safeword_clean, tests_config_examples },
+	{ "suite_safeword_list_credentials_null",      NULL,                     NULL,                 tests_list_credentials_null },
+	{ "suite_safeword_list_credentials_all",       suite_safeword_init,      suite_safeword_clean, tests_list_credentials_all },
+	{ "suite_safeword_list_credentials_examples",  suite_safeword_init,      suite_safeword_clean, tests_list_credentials_examples },
 	CU_SUITE_INFO_NULL,
 };
 
