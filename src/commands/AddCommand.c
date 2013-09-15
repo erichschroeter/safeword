@@ -76,11 +76,14 @@ fail_options:
 	return ret;
 }
 
-int addCmd_execute(void)
+int addCmd_run(int argc, char** argv)
 {
 	int ret;
 	struct safeword_db db;
 	struct safeword_credential *cred;
+
+	ret = addCmd_parse(argc, argv);
+	if (ret != 0) return ret;
 
 	if (!_username) {
 		fprintf(stderr, "no username specified\n");

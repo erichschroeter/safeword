@@ -30,10 +30,13 @@ int removeCmd_parse(int argc, char** argv)
 	return ret;
 }
 
-int removeCmd_execute(void)
+int removeCmd_run(int argc, char** argv)
 {
 	int ret;
 	struct safeword_db db;
+
+	ret = removeCmd_parse(argc, argv);
+	if (ret != 0) return ret;
 
 	ret = safeword_open(&db, 0);
 	safeword_check(!ret, ret, fail);

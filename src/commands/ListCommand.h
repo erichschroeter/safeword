@@ -4,7 +4,6 @@
 #include "Command.h"
 
 char* listCmd_help(void);
-int listCmd_parse(int arc, char** argv);
-int listCmd_execute(void);
+int listCmd_run(int arc, char** argv);
 
 #endif

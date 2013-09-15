@@ -62,12 +62,15 @@ fail:
 	return 0;
 }
 
-int listCmd_execute(void)
+int listCmd_run(int argc, char** argv)
 {
 	int ret = 0, i;
 	struct safeword_db db;
 	struct safeword_credential **credentials;
 	unsigned int credentials_size;
+
+	ret = listCmd_parse(argc, argv);
+	if (ret != 0) return ret;
 
 	ret = safeword_open(&db, 0);
 	safeword_check(!ret, ret, fail);

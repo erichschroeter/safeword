@@ -42,7 +42,7 @@ void print_possible_commands(const char* command_str)
 int main(int argc, char** argv)
 {
 	const char* command_str;
-	int res = 0, i, command_index = 1;
+	int i, command_index = 1;
 
 	/* process any options before subcommand */
 	for (i = 1; i < argc; i++) {
@@ -80,23 +80,7 @@ int main(int argc, char** argv)
 		}
 
 		if (command_index >= 0 && matches == 1) {
-			res = command_table[command_index].parse(--argc, ++argv);
-			switch (res) {
-			case 0:
-				res = command_table[command_index].execute();
-				switch (res) {
-				case 0:
-					break;
-				case -ESAFEWORD_DBEXIST:
-					fprintf(stderr, "database does not exist. See 'safeword help init'\n");
-					break;
-				default:
-					fprintf(stderr, "safeword execute error: '%s'\n", safeword_strerror(res));
-				}
-				break;
-			default:
-				fprintf(stderr, "safeword parsing error: '%s'\n", safeword_strerror(res));
-			}
+			command_table[command_index].run(--argc, ++argv);
 		} else if (matches) {
 			print_possible_commands(command_str);
 		} else {

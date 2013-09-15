@@ -4,7 +4,6 @@
 #include "Command.h"
 
 char* removeCmd_help(void);
-int removeCmd_parse(int arc, char** argv);
-int removeCmd_execute(void);
+int removeCmd_run(int arc, char** argv);
 
 #endif

@@ -16,7 +16,6 @@
 
 #include "dbg.h"
 #include "safeword.h"
-#include "commands/Command.h"
 
 int safeword_errno = 0;
 

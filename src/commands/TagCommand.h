@@ -4,7 +4,6 @@
 #include "Command.h"
 
 char* tagCmd_help(void);
-int tagCmd_parse(int arc, char** argv);
-int tagCmd_execute(void);
+int tagCmd_run(int arc, char** argv);
 
 #endif

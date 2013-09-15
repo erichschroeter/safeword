@@ -287,10 +287,13 @@ fail:
 	return ret;
 }
 
-int tagCmd_execute(void)
+int tagCmd_run(int argc, char** argv)
 {
 	int ret = 0, i, j;
 	struct safeword_db db;
+
+	ret = tagCmd_parse(argc, argv);
+	if (ret != 0) return ret;
 
 	ret = safeword_open(&db, 0);
 	safeword_check(!ret, ret, fail);

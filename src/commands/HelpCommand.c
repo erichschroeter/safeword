@@ -34,10 +34,14 @@ fail:
 	return ret;
 }
 
-int helpCmd_execute(void)
+int helpCmd_run(int argc, char** argv)
 {
-	if (command_index >= 0)
-		printf("%s", command_table[command_index].help());
+	int ret = helpCmd_parse(argc, argv);
+	if (ret != 0) return ret;
+
+	/* TODO implement opening man page or html */
+	/*if (command_index >= 0)*/
+		/*printf("%s", command_table[command_index].help());*/
 
 	return 0;
 }

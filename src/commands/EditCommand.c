@@ -88,11 +88,14 @@ fail:
 	return ret;
 }
 
-int editCmd_execute(void)
+int editCmd_run(int argc, char** argv)
 {
 	int ret;
 	struct safeword_db db;
 	struct safeword_credential cred;
+
+	ret = editCmd_parse(argc, argv);
+	if (ret != 0) return ret;
 
 	memset(&cred, 0, sizeof(cred));
 

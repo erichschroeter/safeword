@@ -68,10 +68,13 @@ int copyCmd_parse(int argc, char** argv)
 	return ret;
 }
 
-int copyCmd_execute(void)
+int copyCmd_run(int argc, char** argv)
 {
 	int ret = 0, i = 0;
 	struct safeword_db db;
+
+	ret = copyCmd_parse(argc, argv);
+	if (ret != 0) return ret;
 
 	ret = safeword_open(&db, 0);
 	if (ret)

@@ -63,9 +63,12 @@ fail:
 	return ret;
 }
 
-int initCmd_execute(void)
+int initCmd_run(int argc, char** argv)
 {
 	int ret;
+
+	ret = initCmd_parse(argc, argv);
+	if (ret != 0) return ret;
 
 	if (!_file) {
 		fprintf(stderr, "no path specified\n");

@@ -4,7 +4,6 @@
 #include "Command.h"
 
 char* editCmd_help(void);
-int editCmd_parse(int arc, char** argv);
-int editCmd_execute(void);
+int editCmd_run(int arc, char** argv);
 
 #endif // COMMAND_EDIT_H

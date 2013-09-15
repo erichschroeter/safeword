@@ -4,7 +4,6 @@
 #include "Command.h"
 
 char* copyCmd_help(void);
-int copyCmd_parse(int arc, char** argv);
-int copyCmd_execute(void);
+int copyCmd_run(int arc, char** argv);
 
 #endif

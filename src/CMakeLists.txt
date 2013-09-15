@@ -1,3 +1,8 @@
+set(SAFEWORD_SRCS
+safeword.c
+)
+add_library(safeword ${SAFEWORD_SRCS})
+
 set(COMMAND_SRCS
 commands/Command.c
 commands/InitCommand.c
@@ -11,11 +16,7 @@ commands/ShowCommand.c
 commands/EditCommand.c
 )
 add_library(commands ${COMMAND_SRCS})
-
-set(SAFEWORD_SRCS
-safeword.c
-)
-add_library(safeword ${SAFEWORD_SRCS})
+target_link_libraries(commands safeword)
 
 set(SAFEWORD_CLI_SRCS
 main.c

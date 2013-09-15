@@ -37,12 +37,15 @@ int showCmd_parse(int argc, char** argv)
 	return ret;
 }
 
-int showCmd_execute(void)
+int showCmd_run(int argc, char** argv)
 {
 	int i, ret;
 	struct safeword_db db;
 	struct safeword_credential credential;
 	struct safeword_tag tag;
+
+	ret = showCmd_parse(argc, argv);
+	if (ret != 0) return ret;
 
 	memset(&tag, 0, sizeof(tag));
 	memset(&credential, 0, sizeof(credential));
