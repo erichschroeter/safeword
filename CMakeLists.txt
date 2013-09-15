@@ -56,6 +56,38 @@ endif()
 add_subdirectory(src)
 add_subdirectory(test)
 
+#
+# Documentation
+#
+set(manpages)
+set(ASCIIDOC_SOURCES
+doc/asciidoc/safeword-add.txt
+doc/asciidoc/safeword-cp.txt
+doc/asciidoc/safeword-export.txt
+doc/asciidoc/safeword-init.txt
+doc/asciidoc/safeword-ls.txt
+doc/asciidoc/safeword-rm.txt
+doc/asciidoc/safeword-show.txt
+doc/asciidoc/safeword-tag.txt
+doc/asciidoc/safeword.txt
+)
+foreach(txt ${ASCIIDOC_SOURCES})
+	string(REPLACE ".txt" ".1" manpage "${PROJECT_SOURCE_DIR}/${txt}")
+	add_custom_command(OUTPUT ${manpage}
+		COMMAND a2x --doctype manpage --format manpage "${PROJECT_SOURCE_DIR}/${txt}"
+		DEPENDS "${PROJECT_SOURCE_DIR}/${txt}"
+		)
+	list(APPEND manpages ${manpage})
+endforeach()
+add_custom_target(docs DEPENDS ${manpages})
+install(FILES ${manpages}
+DESTINATION "/usr/local/man/man1"
+PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+)
+
+#
+# Bash Completion
+#
 install(FILES "${PROJECT_SOURCE_DIR}/doc/bash/safeword.sh"
 DESTINATION "/etc/bash_completion.d"
 PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
