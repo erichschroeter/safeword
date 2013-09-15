@@ -1,0 +1,44 @@
+safeword-export(1)
+==================
+
+NAME
+----
+safeword-export - Export existing credentials from a Safeword database
+
+SYNOPSIS
+--------
+[verse]
+'safeword export' [--all | -a] [(<id> | <tag>) ...]
+
+DESCRIPTION
+-----------
+This command exports the credentials stored in a Safeword database. Without any
+arguments only credentials with no tags are displayed, otherwise credentials
+with only the specified tags are displayed.
+
+OPTIONS
+-------
+<id>::
+	A list of credential IDs separated by whitespace.
+
+<tag>::
+	A list of tags separated by whitespace. If a tag contains whitespace
+	then it must be wrapped in quotes.
+
+-a::
+--all::
+	Export all credentials in a Safeword database. Specifying this renders
+	<id> and <tag> arguments pointless.
+
+SEE ALSO
+--------
+link:safeword-show[1]
+link:safeword-cp[1]
+link:safeword-ls[1]
+link:safeword-tag[1]
+link:safeword-edit[1]
+link:safeword-rm[1]
+
+SAFEWORD
+--------
+Part of the link:safeword[1] suite

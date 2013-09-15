@@ -8,6 +8,7 @@
 #include "CopyCommand.h"
 #include "ShowCommand.h"
 #include "EditCommand.h"
+#include "ExportCommand.h"
 
 struct command command_table[] = {
 	{"help", helpCmd_run},
@@ -19,6 +20,7 @@ struct command command_table[] = {
 	{"cp", copyCmd_run},
 	{"show", showCmd_run},
 	{"edit", editCmd_run},
+	{"export", exportCmd_run},
 };
 const size_t command_table_size = sizeof(command_table) / sizeof(command_table[0]);
 

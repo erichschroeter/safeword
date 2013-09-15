@@ -14,6 +14,7 @@ commands/TagCommand.c
 commands/CopyCommand.c
 commands/ShowCommand.c
 commands/EditCommand.c
+commands/ExportCommand.c
 )
 add_library(commands ${COMMAND_SRCS})
 target_link_libraries(commands safeword)

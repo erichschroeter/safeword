@@ -24,3 +24,6 @@ link:safeword-show[1]::
 
 link:safeword-edit[1]::
 	Edit existing credentials in a safeword database.
+
+link:safeword-export[1]::
+	Export existing credentials from a safeword database.
