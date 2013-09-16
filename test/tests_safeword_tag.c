@@ -18,7 +18,7 @@ void test_safeword_tag_credential(void)
 {
 	int i, ret;
 	struct safeword_credential *example = safeword_credential_create(
-		"myusername", "Exr3meLY Har|) T0 Gu355!", "Example.com account");
+		"myusername", "Exr3meLY Har|) T0 Gu355!", "Example.com account", NULL);
 	CU_ASSERT_PTR_NOT_NULL(example);
 
 	ret = safeword_credential_add(db1, example);

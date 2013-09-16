@@ -410,7 +410,7 @@ int safeword_credential_list(struct safeword_db *db, unsigned int tags_size, cha
 				const char *description = (const char*) sqlite3_column_text(stmt, 1);
 
 				/*(*credentials)[i] = calloc(1, sizeof(struct safeword_credential));*/
-				(*credentials)[i] = safeword_credential_create(NULL, NULL, description);
+				(*credentials)[i] = safeword_credential_create(NULL, NULL, description, NULL);
 				if (!((*credentials)[i])) continue;
 				(*credentials)[i]->id = strtol(id, NULL, 10);
 				i++;
@@ -830,7 +830,8 @@ fail:
 	return -1;
 }
 
-struct safeword_credential *safeword_credential_create(const char *username, const char *password, const char *description)
+struct safeword_credential *safeword_credential_create(const char *username, const char *password,
+	const char *description, const char *note)
 {
 	struct safeword_credential *cred = calloc(1, sizeof(struct safeword_credential));
 	safeword_check(cred != NULL, ESAFEWORD_NOMEM, fail);
@@ -850,8 +851,16 @@ struct safeword_credential *safeword_credential_create(const char *username, con
 		safeword_check(cred->description != NULL, ESAFEWORD_NOMEM, fail_description);
 		strcpy(cred->description, description);
 	}
+	if (note) {
+		cred->note = calloc(strlen(note) + 1, sizeof(char));
+		safeword_check(cred->note != NULL, ESAFEWORD_NOMEM, fail_note);
+		strcpy(cred->note, note);
+	}
 
 	return cred;
+fail_note:
+	if (cred->description)
+		free(cred->description);
 fail_description:
 	if (cred->password)
 		free(cred->password);

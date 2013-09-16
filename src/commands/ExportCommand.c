@@ -121,7 +121,7 @@ int exportCmd_run(int argc, char** argv)
 	ret = safeword_open(&db, 0);
 	safeword_check(ret == 0, ret, fail);
 
-	cred = safeword_credential_create(NULL, NULL, NULL);
+	cred = safeword_credential_create(NULL, NULL, NULL, NULL);
 	if (cred == NULL) goto fail;
 
 	if (_all) {

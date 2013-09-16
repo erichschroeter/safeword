@@ -160,7 +160,8 @@ int safeword_credential_add(struct safeword_db *db, struct safeword_credential *
  *
  * @see safeword_credential_free
  */
-struct safeword_credential *safeword_credential_create(const char *username, const char *password, const char *description);
+struct safeword_credential *safeword_credential_create(const char *username, const char *password,
+	const char *description, const char *note);
 /**
  * read an existing credential
  *

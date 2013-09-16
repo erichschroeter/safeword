@@ -99,7 +99,7 @@ int addCmd_run(int argc, char** argv)
 	ret = safeword_open(&db, 0);
 	safeword_check(!ret, ret, fail);
 
-	cred = safeword_credential_create(_username, _password, _description);
+	cred = safeword_credential_create(_username, _password, _description, NULL);
 	if (!cred) goto fail;
 
 	ret = safeword_credential_add(&db, cred);
