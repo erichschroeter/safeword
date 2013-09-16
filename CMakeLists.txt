@@ -81,7 +81,7 @@ foreach(txt ${ASCIIDOC_SOURCES})
 endforeach()
 add_custom_target(docs DEPENDS ${manpages})
 install(FILES ${manpages}
-DESTINATION "/usr/local/man/man1"
+DESTINATION share/man/man1
 PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
 )
 add_dependencies(safeword docs)
