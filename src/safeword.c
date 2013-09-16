@@ -197,7 +197,8 @@ int safeword_init(const char *path)
 		"id INTEGER PRIMARY KEY, "
 		"usernameid INTEGER REFERENCES usernames(id), "
 		"passwordid INTEGER REFERENCES passwords(id), "
-		"description TEXT "
+		"description TEXT, "
+		"note TEXT "
 		");");
 	ret = sqlite3_exec(handle, sql, 0, 0, 0);
 	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
@@ -518,6 +519,11 @@ static int credential_get_credential_callback(void* cred, int argc, char** argv,
 		safeword_check(credential->description, ESAFEWORD_NOMEM, fail);
 		strcpy(credential->description, argv[1]);
 	}
+	if (argv[2]) {
+		credential->note = calloc(strlen(argv[2]) + 1, sizeof(char));
+		safeword_check(credential->note, ESAFEWORD_NOMEM, fail);
+		strcpy(credential->note, argv[2]);
+	}
 	return 0;
 fail:
 	return -1;
@@ -585,7 +591,11 @@ int safeword_credential_read(struct safeword_db *db, struct safeword_credential 
 		free(credential->description);
 		credential->description = NULL;
 	}
-	sprintf(sql, "SELECT id,description FROM credentials WHERE id = %d;", credential->id);
+	if (credential->note) {
+		free(credential->note);
+		credential->note = NULL;
+	}
+	sprintf(sql, "SELECT id,description,note FROM credentials WHERE id = %d;", credential->id);
 	ret = sqlite3_exec(db->handle, sql, &credential_get_credential_callback, credential, 0);
 	safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail_sql);
 

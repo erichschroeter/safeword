@@ -49,6 +49,7 @@ struct safeword_credential {
 	char *username;
 	char *password;
 	char *description;
+	char *note;
 	unsigned int tags_size;
 	char **tags;
 };
