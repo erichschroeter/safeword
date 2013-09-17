@@ -797,7 +797,7 @@ int safeword_credential_add(struct safeword_db *db, struct safeword_credential *
 {
 	int ret = 0;
 	char *sql_insert = "INSERT INTO credentials DEFAULT VALUES;";
-	char *sql_update = "UPDATE credentials SET description = ? WHERE id = ?;";
+	char *sql_update;
 	sqlite3_stmt *stmt = NULL;
 
 	safeword_check(db != NULL, ESAFEWORD_INVARG, fail);
@@ -808,11 +808,26 @@ int safeword_credential_add(struct safeword_db *db, struct safeword_credential *
 	credential->id = sqlite3_last_insert_rowid(db->handle);
 
 	if (credential->description) {
+		sql_update = "UPDATE credentials SET description = ? WHERE id = ?;";
 		ret = sqlite3_prepare_v2(db->handle, sql_update, strlen(sql_update) + 1, &stmt, NULL);
 		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 		ret = sqlite3_bind_int64(stmt, 2, credential->id);
 		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 		ret = sqlite3_bind_text(stmt, 1, credential->description, strlen(credential->description) + 1, SQLITE_STATIC);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_step(stmt);
+		safeword_check(ret == SQLITE_DONE, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_finalize(stmt);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+	}
+
+	if (credential->note) {
+		sql_update = "UPDATE credentials SET note = ? WHERE id = ?;";
+		ret = sqlite3_prepare_v2(db->handle, sql_update, strlen(sql_update) + 1, &stmt, NULL);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_bind_int64(stmt, 2, credential->id);
+		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
+		ret = sqlite3_bind_text(stmt, 1, credential->note, strlen(credential->note) + 1, SQLITE_STATIC);
 		safeword_check(ret == SQLITE_OK, ESAFEWORD_BACKENDSTORAGE, fail);
 		ret = sqlite3_step(stmt);
 		safeword_check(ret == SQLITE_DONE, ESAFEWORD_BACKENDSTORAGE, fail);
