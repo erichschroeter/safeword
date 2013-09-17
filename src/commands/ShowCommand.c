@@ -64,6 +64,7 @@ int showCmd_run(int argc, char** argv)
 			printf("%s", credential.tags[i]);
 		}
 		if (credential.tags_size) printf("\n");
+		if (credential.note) printf("%s\n", credential.note);
 	} else {
 		memset(&tag, 0, sizeof(tag));
 		tag.tag = _tag;
