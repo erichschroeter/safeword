@@ -63,6 +63,7 @@ set(manpages)
 set(ASCIIDOC_SOURCES
 doc/asciidoc/safeword-add.txt
 doc/asciidoc/safeword-cp.txt
+doc/asciidoc/safeword-edit.txt
 doc/asciidoc/safeword-export.txt
 doc/asciidoc/safeword-init.txt
 doc/asciidoc/safeword-ls.txt

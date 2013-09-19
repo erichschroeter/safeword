@@ -1,32 +1,37 @@
-safeword-add(1)
-===============
+safeword-edit(1)
+================
 
 NAME
 ----
-safeword-add - Add a credential to safeword database
+safeword-edit - Edit an existing credential in a safeword database
 
 SYNOPSIS
 --------
 [verse]
-'safeword add' [--message | -m <message>] [--tag | -t <tag>,...]
-	[--note | -n <note>] <username> <password>
+'safeword edit' [--username | -u  <username>] [--password | -p <password>]
+	[--message | -m <message>] [--note | -n <note>] <id>
 
 DESCRIPTION
 -----------
-This command adds a new credential to a safeword database with the specified
-information. The message option is helpful when listing credentials to see a
-short description of what the credential's intended purpose is.
+This command edits an existing credential into a safeword database by modifying
+the existing field values with the specified data.
 
-Please see link:safeword-edit[1] for editing existing credentials.
-
+.TODO list
+- Specifying no options should open up editor to allow manual editing of all
+  fields
 
 OPTIONS
 -------
-<username>::
+<id>::
+	The credential identifier.
+
+-u::
+--username::
 	The username text for the credential. There are no restrictions on
 	characters used for this field.
 
-<password>::
+-p::
+--password::
 	The password text for the credential. There are no restrictions on
 	characters used for this field.
 
@@ -36,11 +41,6 @@ OPTIONS
 	mainly for your own use so you remember the context in which you
 	intended to use it.
 
--t::
---tag::
-	A comma-separated list tags to help filter this credential in a large
-	database.
-
 -n::
 --note::
 	Additional text pertaining to the credential. This may contain
@@ -48,7 +48,9 @@ OPTIONS
 
 SEE ALSO
 --------
-link:safeword-edit[1]
+link:safeword-ls[1]
+link:safeword-add[1]
+link:safeword-show[1]
 link:safeword-tag[1]
 link:safeword-rm[1]
 
