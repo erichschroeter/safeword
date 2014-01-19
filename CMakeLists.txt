@@ -38,6 +38,10 @@ find_package(Sqlite3 REQUIRED)
 include_directories(${SQLITE3_INCLUDE_DIR})
 set(LIBS ${LIBS} ${SQLITE3_LIBRARIES})
 
+find_package(PolarSSL REQUIRED)
+include_directories(${PolarSSL_INCLUDE_DIR})
+set(LIBS ${LIBS} ${PolarSSL_LIBRARIES})
+
 if(NOT WIN32)
 	find_package(X11 REQUIRED)
 	include_directories(${X11_INCLUDE_DIR})

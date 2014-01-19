@@ -1,5 +1,6 @@
 set(SAFEWORD_SRCS
 safeword.c
+security.c
 )
 add_library(safeword ${SAFEWORD_SRCS})
 
@@ -35,3 +36,6 @@ endif()
 target_link_libraries(safewordcli ${LIBS})
 
 install(TARGETS safewordcli RUNTIME DESTINATION bin)
+
+add_executable(encrypt security.c encrypt.c)
+target_link_libraries(encrypt ${PolarSSL_LIBRARIES})
